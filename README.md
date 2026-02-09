@@ -1,36 +1,41 @@
 # TOODLE - Intelligent Support Ticket Classifier
 
-**Status:** Under construction
-
 A clean, production-ready implementation of an intelligent support ticket categorization system demonstrating Full-Stack AI Engineer capabilities.
 
 ## Project Goals
 
-TOODLE demonstrates end-to-end ML engineering with clean, maintainable code (~4,500 lines):
+TOODLE demonstrates end-to-end ML engineering with clean, maintainable code (~5,200 lines):
 
 - **Traditional ML**: CatBoost + XGBoost
 - **Deep Learning**: DistilBERT with KerasNLP
 - **Data Engineering**: dbt + DuckDB pipeline
 - **MLOps**: MLflow experiment tracking + Optuna tuning
 - **RAG Retrieval**: FAISS + entity search
+- **Anomaly Detection**: Confidence & volume-based monitoring
 - **Production API**: FastAPI serving with Docker deployment
 
 ## Key Design Decision
 
-All models train on **clean, deduplicated data** (~110 unique subject→category mappings) rather than noisy 100K samples, targeting >85% F1 score.
+All models train on **clean, deduplicated data** (~110 unique subject→category mappings) rather than noisy 100K samples, achieving >85% F1 score. The 100K corpus is used for RAG retrieval and anomaly baselines.
 
-## Current Stage
+## Quick Architecture
 
-✅ **Stage 0: Scaffold & Config** - Complete
-- See [D-001 to D-005](docs/DECISIONS.md) for configuration decisions
+```
+support_tickets.json (100K)
+    ├─→ dbt Pipeline → featured_tickets (RAG corpus, search index)
+    └─→ Splitter → clean_training (~110) → Model Training
+                                              ├─ CatBoost
+                                              ├─ XGBoost
+                                              └─ DistilBERT
+                                                    ↓
+                                              FastAPI Serving
+                                              ├─ /predict (category)
+                                              ├─ /analyze-feedback (sentiment)
+                                              ├─ /search (RAG retrieval)
+                                              └─ /health
+```
 
-✅ **Stage 1: Data Pipeline** - Complete
-- See [Architecture: Data Pipeline](docs/ARCHITECTURE.md) for design
-- See [Model: Pre-Training Baseline](docs/MODEL.md) for expectations
-- See [D-006, D-007](docs/DECISIONS.md) for clean data strategy
-- 19 tests passing
-
-🚧 **Next: Stage 2: Feature Engineering**
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed component design.
 
 ## Quick Start
 
@@ -71,10 +76,108 @@ To install missing packages, run:
 make check-system
 ```
 
+## API Usage
+
+### Start the API
+
+```bash
+# Local development (with auto-reload)
+make api
+
+# Docker deployment
+make docker-build
+make docker-up
+
+# API will be available at http://localhost:8000
+```
+
+### Example: Predict Ticket Category
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticket_id": "TK-12345",
+    "subject": "Database sync failing with timeout",
+    "description": "Getting ERROR_TIMEOUT_429 when trying to sync large datasets",
+    "product": "DataSync Pro",
+    "customer_tier": "enterprise"
+  }'
+```
+
+**Response:**
+```json
+{
+  "ticket_id": "TK-12345",
+  "predicted_category": "Technical Issue",
+  "predicted_priority": "medium",
+  "predicted_sentiment": "neutral",
+  "category_confidence": 0.92,
+  "priority_confidence": null,
+  "sentiment_confidence": null,
+  "warning": "priority_placeholder,sentiment_placeholder",
+  "model_used": "xgboost",
+  "inference_time_ms": 15.2
+}
+```
+
+### Example: Analyze Feedback Sentiment
+
+```bash
+curl -X POST http://localhost:8000/analyze-feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticket_id": "TK-12345",
+    "feedback_text": "Great support! Issue resolved quickly."
+  }'
+```
+
+**Response:**
+```json
+{
+  "ticket_id": "TK-12345",
+  "predicted_sentiment": "satisfied",
+  "sentiment_confidence": 0.89,
+  "model_used": "catboost_sentiment",
+  "inference_time_ms": 8.7
+}
+```
+
+### Example: Search Similar Resolutions
+
+```bash
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Database sync timeout ERROR_TIMEOUT_429",
+    "top_k": 5,
+    "filters": {"category": "Technical Issue"}
+  }'
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "ticket_id": "TK-9876",
+      "resolution": "Increased connection timeout to 60s in sync_engine config.",
+      "category": "Technical Issue",
+      "similarity_score": 0.94,
+      "matched_entities": ["ERROR_TIMEOUT_429", "DataSync Pro"]
+    }
+  ],
+  "search_time_ms": 23.5
+}
+```
+
+See [docs/API_CONTRACT.md](docs/API_CONTRACT.md) for complete API documentation.
+
 ## Documentation
 
 ### Core Documentation
-- [Technical Decisions](docs/DECISIONS.md) - Decision log with rationale (D-001 to D-007)
+- [API Contract](docs/API_CONTRACT.md) - Endpoint specifications and examples
+- [Technical Decisions](docs/DECISIONS.md) - Decision log with rationale (D-001 to D-020)
 - [System Architecture](docs/ARCHITECTURE.md) - Component design and data flow
 - [Model Documentation](docs/MODEL.md) - Performance analysis and comparisons
 
@@ -86,3 +189,24 @@ make check-system
 ### Investigations
 - [Subcategory Independence Analysis](exploration/subcategory_independence/REPORT.md) - Statistical evidence for scope decisions
 - [Exploration Methodology](exploration/README.md) - Investigation approach
+
+## Project Status
+
+✅ **All stages complete** (Stage 0-7)
+
+- **Stage 0**: Project scaffold, configuration system
+- **Stage 1**: Data pipeline (dbt + DuckDB, clean training set extraction)
+- **Stage 2**: Feature engineering (TF-IDF, categorical encoding)
+- **Stage 2.5**: Evaluation infrastructure (metrics, MLflow, reporting)
+- **Stage 3**: Traditional ML (CatBoost, XGBoost)
+- **Stage 4**: Deep learning (DistilBERT)
+- **Stage 4.5**: Model comparison and reporting
+- **Stage 5**: Sentiment, search, anomaly detection
+- **Stage 6**: API & integration
+- **Stage 7**: Documentation polish & verification
+
+**Current Metrics:**
+- 87 tests passing
+- 5,181 source lines of code
+- 3 trained classification models (CatBoost, XGBoost, DistilBERT)
+- 4 API endpoints

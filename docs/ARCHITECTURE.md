@@ -9,18 +9,130 @@
 
 ## Overview
 
-The core system now includes Stage 1-5 components:
+The core system now includes Stage 1-7 components:
 1. **Full corpus** (100K tickets) → RAG, search, anomaly detection
 2. **Clean training set** (~110 samples) → Category prediction models
 3. **Traditional ML trainers** (CatBoost + XGBoost) with MLflow and evaluation artifacts
-4. **Sentiment classifier** (CatBoost) trained on feedback text
-5. **Retrieval and anomaly modules** for semantic search and issue monitoring
+4. **Deep learning** (DistilBERT) for text-based category classification
+5. **Sentiment classifier** (CatBoost) trained on feedback text
+6. **Retrieval and anomaly modules** for semantic search and issue monitoring
+7. **FastAPI serving layer** with /predict, /analyze-feedback, /search, /health endpoints
 
 This architecture addresses the data quality challenge: 100K raw tickets contain 30% conflicting labels, while ~110 unique subject templates provide clean, deterministic category mappings.
 
 ---
 
-## Architecture Diagram
+## System Overview Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            TOODLE System Architecture                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+INPUT: support_tickets.json (100K tickets)
+   │
+   ├─────────────────────────────────────────────────────────────────────────┐
+   │                                                                           │
+   v                                                                           v
+┌──────────────────────────────┐                      ┌──────────────────────────┐
+│  DATA PIPELINE (Stage 1)     │                      │  CLEAN DATA EXTRACTION   │
+│  • Loader → DuckDB           │                      │  (Stage 1 - splitter)    │
+│  • dbt transformations       │                      │  • Deduplicate subjects  │
+│    - stg_tickets            │                      │  • Validate zero         │
+│    - mart_tickets_features  │                      │    conflicts             │
+│  • Output: featured_tickets │                      │  • Balance & stratify    │
+│    (100K with features)     │                      │  • Output: ~110 clean    │
+└──────────────────────────────┘                      │    training samples      │
+   │                                                   └──────────────────────────┘
+   │                                                              │
+   ├──────────────────┬──────────────────┐                      │
+   v                  v                  v                      v
+┌─────────────┐  ┌─────────────┐  ┌──────────────┐    ┌────────────────────┐
+│ EMBEDDINGS  │  │  ANOMALY    │  │   CORPUS     │    │ FEATURE PIPELINE   │
+│ (Stage 5)   │  │  BASELINE   │  │  (Stage 5)   │    │ (Stage 2)          │
+│ • DistilBERT│  │ (Stage 5)   │  │ • Resolution │    │ • TF-IDF (5K)      │
+│   CLS       │  │ • Category  │  │   documents  │    │ • Categorical      │
+│   vectors   │  │   volume    │  │ • Metadata   │    │   encoding         │
+│ • 768-dim   │  │ • Confidence│  │              │    │ • Numerical        │
+│   per ticket│  │   stats     │  │              │    │   scaling          │
+└─────────────┘  └─────────────┘  └──────────────┘    └────────────────────┘
+   │                  │                 │                      │
+   v                  │                 v                      v
+┌─────────────────┐   │         ┌──────────────┐    ┌────────────────────────┐
+│ SEARCH INDEX    │   │         │ ENTITY INDEX │    │ MODEL TRAINING         │
+│ (Stage 5)       │   │         │ (Stage 5)    │    │ (Stages 3-4)           │
+│ • FAISS         │   │         │ • Error codes│    │                        │
+│   IndexFlatIP   │   │         │ • Products   │    │ ┌──────────────────┐   │
+│ • ID mapping    │   │         │ • Inverted   │    │ │ CatBoost (S3)    │   │
+│                 │   │         │   index      │    │ │ • 123 LOC        │   │
+└─────────────────┘   │         └──────────────┘    │ │ • F1: ~0.91      │   │
+   │                  │                 │            │ └──────────────────┘   │
+   │                  │                 │            │                        │
+   │                  │                 │            │ ┌──────────────────┐   │
+   │                  │                 │            │ │ XGBoost (S3)     │   │
+   │                  │                 │            │ │ • 166 LOC        │   │
+   │                  │                 │            │ │ • F1: ~0.89      │   │
+   │                  │                 │            │ └──────────────────┘   │
+   │                  │                 │            │                        │
+   │                  │                 │            │ ┌──────────────────┐   │
+   │                  │                 │            │ │ DistilBERT (S4)  │   │
+   │                  │                 │            │ │ • 831 LOC        │   │
+   │                  │                 │            │ │ • F1: varies     │   │
+   │                  │                 │            │ └──────────────────┘   │
+   │                  │                 │            │                        │
+   │                  │                 │            │ ┌──────────────────┐   │
+   │                  │                 │            │ │ Sentiment (S5)   │   │
+   │                  │                 │            │ │ • CatBoost       │   │
+   │                  │                 │            │ │ • Feedback text  │   │
+   │                  │                 │            │ └──────────────────┘   │
+   │                  │                 │            └────────────────────────┘
+   │                  │                 │                      │
+   │                  │                 │                      v
+   │                  │                 │            ┌────────────────────────┐
+   │                  │                 │            │ MODEL ARTIFACTS        │
+   │                  │                 │            │ • models/*.cbm, *.json │
+   │                  │                 │            │ • features/*.pkl       │
+   │                  │                 │            │ • metrics/*.json       │
+   │                  │                 │            └────────────────────────┘
+   │                  │                 │                      │
+   └──────────────────┴─────────────────┴──────────────────────┘
+                                 │
+                                 v
+              ┌────────────────────────────────────────────┐
+              │   FASTAPI SERVING LAYER (Stage 6)         │
+              │   • ModelManager (load all models)        │
+              │   • FeaturePipeline (transform inputs)    │
+              │   • AnomalyDetector (confidence checks)   │
+              │   • SearchEngine (hybrid retrieval)       │
+              └────────────────────────────────────────────┘
+                                 │
+                 ┌───────────────┼───────────────┬────────────────┐
+                 v               v               v                v
+          ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌──────────┐
+          │ /predict │   │ /analyze- │   │ /search  │   │ /health  │
+          │          │   │ feedback  │   │          │   │          │
+          │ Category │   │ Sentiment │   │ RAG      │   │ Status   │
+          │ + placeh.│   │ (real)    │   │ retrieval│   │ check    │
+          └──────────┘   └───────────┘   └──────────┘   └──────────┘
+                                 │
+                                 v
+                          CLIENT APPLICATIONS
+```
+
+**Key Flows:**
+
+1. **Training Flow** (offline):
+   - 100K → dbt → clean ~110 → feature pipeline → model training → artifacts
+
+2. **Serving Flow** (online):
+   - Request → /predict → feature pipeline → model inference → response
+
+3. **Retrieval Flow** (online):
+   - Query → /search → embedding → FAISS + entity boost → results
+
+---
+
+## Detailed Component Diagram
 
 ```
 support_tickets.json (100K records)
