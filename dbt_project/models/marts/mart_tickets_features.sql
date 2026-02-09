@@ -27,7 +27,7 @@ select
     customer_tier,
     environment,
     language,
- region,
+    region,
     priority,
     severity,
 

@@ -35,9 +35,6 @@ renamed as (
 
         cast(category as varchar) as category,
         cast(subcategory as varchar) as subcategory
-
-        -- Removed: has_error_code, has_stack_trace, leakage_pattern (Moved to Python)
-    from source as s
 )
 
 select * from renamed

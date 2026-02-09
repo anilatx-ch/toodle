@@ -14,29 +14,6 @@ Usage:
     python investigate_subcategory.py --data <path_to_pkl> --output-dir <dir>
 """
 
-from __future__ import annotations
-
-import argparse
-import json
-import math
-from pathlib import Path
-from dataclasses import dataclass
-from typing import Any
-
-import numpy as np
-import pandas as pd
-from scipy.stats import chi2, chi2_contingency, chisquare
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-import warnings
-warnings.filterwarnings('ignore')
-
-
 # Configuration
 BASELINE = 0.20  # Random guessing for 5 uniform classes
 SEED = 42
