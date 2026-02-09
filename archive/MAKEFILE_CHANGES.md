@@ -32,7 +32,7 @@ check-system:
   @echo "Checking for required system packages..."
   @missing_pkgs=""; \
   for pkg in build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-             libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
+             libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev \
              libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1; do \
     if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"; then \
       missing_pkgs="$missing_pkgs $pkg"; \
@@ -87,7 +87,7 @@ install-system:
   sudo apt-get update
   sudo apt-get install -y \
     build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-    libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
+    libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev \
     libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1 pipx
   @echo ""
   @echo "Installing Docker (optional)..."
@@ -136,13 +136,13 @@ Checking for required data files...
 Found required data file: support_tickets.json
 Checking for required system packages...
 
-ERROR: Missing required system packages: libncursesw5-dev
+ERROR: Missing required system packages: libncurses-dev
 
 To install missing packages, run:
   make install-system
 
 Or manually install with:
-  sudo apt-get install -y libncursesw5-dev
+  sudo apt-get install -y libncurses-dev
 
 make: *** [Makefile:42: check-system] Error 1
 ```
@@ -177,13 +177,13 @@ Checking for Docker...
 ```
 Checking for required system packages...
 
-ERROR: Missing required system packages: libncursesw5-dev xz-utils
+ERROR: Missing required system packages: libncurses-dev xz-utils
 
 To install missing packages, run:
   make install-system
 
 Or manually install with:
-  sudo apt-get install -y libncursesw5-dev xz-utils
+  sudo apt-get install -y libncurses-dev xz-utils
 ```
 
 ---

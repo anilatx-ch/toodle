@@ -98,13 +98,13 @@ make check-system
 $ cd /home/ai_agent/TOODLE && make check-system
 Checking for required system packages...
 
-ERROR: Missing required system packages: libncursesw5-dev
+ERROR: Missing required system packages: libncurses-dev
 
 To install missing packages, run:
   make install-system
 
 Or manually install with:
-  sudo apt-get install -y libncursesw5-dev
+  sudo apt-get install -y libncurses-dev
 
 make: *** [Makefile:42: check-system] Error 1
 ```

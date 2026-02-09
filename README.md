@@ -58,7 +58,7 @@ make test
 
 **Error: Missing required system packages**
 ```bash
-ERROR: Missing required system packages: libncursesw5-dev
+ERROR: Missing required system packages: libncurses-dev
 
 To install missing packages, run:
   make install-system
