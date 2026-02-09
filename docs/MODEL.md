@@ -1,7 +1,7 @@
 # Model Documentation
 
 **Purpose:** Model performance benchmarks, comparisons, and feature importance
-**Status:** Living document - Stage 1 (pre-training baseline), training results added in Stage 3-4
+**Status:** Living document - Stage 4 BERT implementation complete, full comparison pending Stage 3
 **Last Updated:** 2026-02-09
 
 ---
@@ -11,16 +11,34 @@
 Stage 1 focuses on **data preparation**, not model training. However, data quality analysis conducted during preparation informs expected model performance and design decisions.
 
 This document provides:
-1. **Performance baselines** (expected from Stage 3-4 models)
+1. **Performance baselines** and current model status
 2. **Data quality findings** (why clean data approach)
 3. **Error analysis** (predicted failure modes)
 4. **Experiment tracking** (reproducibility)
 
 ---
 
-## Stage 1: Pre-Training Baseline (Current)
+## Stage 4: DistilBERT (Implemented)
 
-This section documents expected model performance based on data quality analysis. Actual training results will be added in Stage 3-4.
+### Deep Learning Model
+
+#### DistilBERT
+- **Architecture:** DistilBERT base (`distil_bert_base_en_uncased`) with a fine-tuned classification head
+- **Input:** Raw ticket text (`subject [SEP] description`) in the default text-only path
+- **Hyperparameters:** `batch_size=16`, `epochs=4`, `patience=2`, `lr=2e-5`, `weight_decay=0.01`
+- **Artifacts:** model weights + metadata at `models/bert_category_<env>/`, metrics at `metrics/<env>/mdeepl_training_summary.json`
+
+### Current Stage 4 Notes
+
+- Stage 4 implementation includes a lean BERT wrapper (`src/models/bert_model.py`) and training entrypoint (`src/training/train_bert.py`)
+- Optional text+tabular fusion branch remains available in the model wrapper
+- Final BERT-vs-traditional metrics table will be completed after Stage 3 training runs are available
+
+---
+
+## Stage 1: Pre-Training Baseline
+
+This section documents expected model performance from data quality analysis.
 
 ---
 

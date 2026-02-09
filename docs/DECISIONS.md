@@ -2,7 +2,7 @@
 
 **Purpose:** Decision log with rationale for architectural and technical choices
 **Status:** Living document - updated each stage
-**Current Stage:** Stage 1 (Data Pipeline) - Complete
+**Current Stage:** Stage 4 (Deep Learning - BERT) - Complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -206,7 +206,28 @@ Each decision entry follows this structure:
 Decisions for CatBoost and XGBoost hyperparameters, training strategy will be added here.
 
 ### Stage 4: Deep Learning (BERT)
-Decisions for fine-tuning approach, architecture choices will be added here.
+
+#### D-014: BERT Training Configuration
+
+**Decision:** Use small batch (16), few epochs (4), and early stopping (patience=2) for DistilBERT.
+
+**Rationale:** With ~110 clean training samples, BERT can overfit quickly. This setup keeps training stable while limiting unnecessary epochs.
+
+**Trade-off:** This conservative schedule may underfit harder variants, but is appropriate for the deterministic clean-data category task.
+
+**Status:** Implemented
+
+---
+
+#### D-015: Text-Only as Primary BERT Path
+
+**Decision:** Make text-only BERT training the default path, with optional tabular fusion retained in the model wrapper.
+
+**Rationale:** Category prediction signal is concentrated in ticket subject/description. Text-only mode reduces pipeline dependencies while preserving multimodal capability for future extensions.
+
+**Trade-off:** Tabular features are not used in default Stage 4 training, but optional model support remains available to avoid redesign later.
+
+**Status:** Implemented
 
 ### Stage 5: Retrieval & Anomaly Detection
 Decisions for FAISS configuration, anomaly thresholds will be added here.
