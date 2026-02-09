@@ -71,11 +71,6 @@ To install missing packages, run:
 
 **Solution:** Run `make install-system` to install the missing packages, then retry `make install`.
 
-**Verify system packages without installing:**
-```bash
-make check-system
-```
-
 ## API Usage
 
 ### Start the API
@@ -99,9 +94,23 @@ curl -X POST http://localhost:8000/predict \
   -d '{
     "ticket_id": "TK-12345",
     "subject": "Database sync failing with timeout",
-    "description": "Getting ERROR_TIMEOUT_429 when trying to sync large datasets",
+    "description": "Getting ERROR_TIMEOUT_429 when trying to sync large datasets...",
+    "error_logs": "ERROR_TIMEOUT_429: Connection timeout after 30s",
+    "stack_trace": null,
     "product": "DataSync Pro",
-    "customer_tier": "enterprise"
+    "product_module": "sync_engine",
+    "channel": "email",
+    "customer_tier": "enterprise",
+    "environment": "production",
+    "language": "en",
+    "region": "NA",
+    "severity": "P2",
+    "account_age_days": 365,
+    "account_monthly_value": 5000.0,
+    "previous_tickets": 3,
+    "product_version_age_days": 45,
+    "attachments_count": 2,
+    "created_at": "2026-02-09T14:30:00Z"
   }'
 ```
 
@@ -181,10 +190,9 @@ See [docs/API_CONTRACT.md](docs/API_CONTRACT.md) for complete API documentation.
 - [System Architecture](docs/ARCHITECTURE.md) - Component design and data flow
 - [Model Documentation](docs/MODEL.md) - Performance analysis and comparisons
 
-### Project Planning
-- [Porting Plan](PLAN_PORTING.md) - Multi-stage implementation roadmap
-- [Agent Instructions](AGENTS_PORTING.md) - Code quality guidelines
+### Assessment Reference
 - [Original Specification](0_OBJECTIVE.md) - Assessment requirements
+- [Submission Checklist](docs/SUBMISSION_PACKAGE.md) - Included/excluded files and packaging details
 
 ### Investigations
 - [Subcategory Independence Analysis](exploration/subcategory_independence/REPORT.md) - Statistical evidence for scope decisions

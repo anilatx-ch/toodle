@@ -41,7 +41,7 @@ These minimal settings validate the training pipeline but do not represent produ
 
 ### Expected Production Performance
 
-Based on clean data properties and DOODLE baseline results, full training is expected to achieve:
+Based on clean data properties and prior clean-data baseline results, full training is expected to achieve:
 
 | Model      | Expected F1 | Expected Accuracy | Expected Latency (p50) | Size (MB) |
 |------------|-------------|-------------------|------------------------|-----------|
@@ -55,7 +55,7 @@ Based on clean data properties and DOODLE baseline results, full training is exp
 - **XGBoost:** 50-150 estimators, depth 3-5, Optuna tuning
 - **BERT:** 4-8 epochs, batch_size=16, max_len=128, early stopping
 
-**Evidence:** Original DOODLE achieved **0.88 F1** with CatBoost on the same clean data approach.
+**Evidence:** Prior clean-data baseline achieved **0.88 F1** with CatBoost on the same approach.
 
 ---
 
@@ -228,7 +228,7 @@ Subject→Category Conflict Check:
 ### Smoke Test (Fast Validation)
 
 ```bash
-make train SMOKE_TEST=true ENV=dev
+make train-tradml train-bert SMOKE_TEST=true ENV=dev
 # Uses ~20/10/17 samples, minimal hyperparameters
 # Runtime: ~2 minutes
 ```
@@ -236,7 +236,7 @@ make train SMOKE_TEST=true ENV=dev
 ### Full Training (Production)
 
 ```bash
-make train ENV=dev
+make train-tradml train-bert SMOKE_TEST=false ENV=dev
 # Uses full ~110 clean samples, production hyperparameters
 # Runtime: 5-10 minutes (traditional ML), 15-30 minutes (BERT)
 ```
@@ -245,7 +245,7 @@ make train ENV=dev
 
 ```bash
 make train-catboost ENV=dev
-make train-xgboost ENV=dev
+ENV=dev SMOKE_TEST=false poetry run python -m src.training.train_xgboost
 make train-bert ENV=dev
 ```
 

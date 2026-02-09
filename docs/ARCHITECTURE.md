@@ -194,7 +194,8 @@ support_tickets.json (100K records)
 **Purpose:** Initial ingestion from JSON to relational storage
 
 **Input:**
-- `data/raw/support_tickets.json` (100K records)
+- `support_tickets.json` (100K records; root path)
+- or `data/raw/tickets.json` (alternate path)
 
 **Processing:**
 1. Parse JSON array
@@ -343,8 +344,8 @@ df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
 
 **Operational targets:**
 - `make train-catboost`
-- `make train-xgboost`
-- `make train`
+- `make train-tradml`
+- `poetry run python -m src.training.train_xgboost`
 
 ---
 
@@ -402,7 +403,7 @@ df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
 
 **Operational targets:**
 - `make train-sentiment`
-- `make build-search-index`
+- `poetry run python scripts/build_search_index.py`
 - `make build-anomaly-baseline`
 
 ---
@@ -566,7 +567,7 @@ See [D-006](DECISIONS.md#d-006-clean-training-data-strategy) and [D-007](DECISIO
 
 ### Manual Inspection
 
-1. **Sample Review** (Makefile target: `make data-inspect`)
+1. **Sample Review**
    - Print first 10 rows of each split
    - Verify subjects look reasonable
    - Check category distribution
@@ -690,7 +691,7 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 - **dbt Models:** `dbt_project/models/`
 - **Splitter Implementation:** `src/data/splitter.py`
 - **Configuration:** `src/config.py`
-- **Orchestration:** `Makefile` (targets: `make data-pipeline`, `make data-inspect`)
+- **Orchestration:** `Makefile` and Python scripts (`make data-pipeline`, `make train-tradml`, `make train-bert`)
 
 ---
 
@@ -752,10 +753,3 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 - `make api` - start dev server with auto-reload
 - `make docker-build` - build Docker image
 - `make docker-up` - start containerized API
-
----
-
-## Future Stages (Planned)
-
-### Stage 7: Documentation & Verification
-Final polish, verification, and deployment preparation.

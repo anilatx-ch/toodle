@@ -120,7 +120,7 @@ Each decision entry follows this structure:
 
 ---
 
-## Future Stages (Planned)
+## Stage 2+ Decisions
 
 ### Stage 2: Feature Engineering (COMPLETE)
 
@@ -140,7 +140,7 @@ Each decision entry follows this structure:
 - TF-IDF doesn't capture word order or context (acceptable for clean 5-class problem)
 - Fixed vocabulary means unseen words at inference are ignored (mitigated by large vocab)
 
-**Evidence:** Original DOODLE achieved 88% F1 with TF-IDF features on clean data
+**Evidence:** Prior clean-data baseline achieved 88% F1 with TF-IDF features
 
 
 ---
@@ -264,7 +264,7 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Decision:** Return priority and sentiment as deterministic placeholders with null confidence values and explicit warning flags in /predict endpoint.
 
-**Rationale:** API contract demonstrates intended multi-output design while real models are not yet trained. Clients can integrate now and receive real predictions when models are deployed. Explicit `priority_placeholder` and `sentiment_placeholder` warning flags make status unambiguous. Real sentiment available via /analyze-feedback endpoint.
+**Rationale:** API contract demonstrates intended multi-output design while real models are not yet trained. Clients can integrate now and receive real predictions when models are deployed. Explicit `priority_placeholder` and `sentiment_placeholder` warning flags keep status unambiguous. Real sentiment available via /analyze-feedback endpoint.
 
 **Trade-off:** Slightly confusing API (why return fields that aren't real?), but demonstrates extensible design and allows early client integration.
 
@@ -282,14 +282,8 @@ The approach stays interpretable and lightweight for assessment scope.
 
 ---
 
-### Stage 7: Documentation & Verification
-Final polish decisions will be added here.
-
----
-
 ## Cross-References
 
 - **System Architecture**: See `ARCHITECTURE.md` for implementation details
 - **Model Performance**: See `MODEL.md` for benchmarks and analysis
 - **Data Investigation**: See `exploration/subcategory_independence/REPORT.md` for statistical evidence
-- **Porting Plan**: See `PLAN_PORTING.md` for stage-by-stage roadmap

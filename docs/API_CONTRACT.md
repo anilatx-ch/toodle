@@ -1,7 +1,7 @@
 # API Contract
 
 **Version:** 1.0.0
-**Status:** Stage 6 Complete
+**Status:** Stage 7 Verified
 **Last Updated:** 2026-02-09
 
 ## Overview
@@ -195,7 +195,8 @@ Search for similar historical ticket resolutions using semantic search + entity 
 - `503`: Search index not built
 
 **Notes:**
-- Requires search index built via `make build-search-index`
+- Requires search index artifacts built via:
+  `poetry run python scripts/build_search_index.py`
 - Combines DistilBERT semantic embeddings with entity-based boosting
 - Optional filters: `category`, `product`, `resolution_code`
 
@@ -254,7 +255,7 @@ All error responses follow this format:
 
 **Backend Selection:**
 Set via `SERVING_BACKEND` environment variable:
-- `catboost` (default for this project)
+- `xgboost` (default for this project)
 - `xgboost`
 - `bert`
 
