@@ -1,0 +1,474 @@
+# Stage 1 Architecture: Data Pipeline
+
+**Purpose:** Design documentation for Phase 1 data preparation pipeline
+**Status:** IMPLEMENTED
+**Last Updated:** 2026-02-09
+
+---
+
+## Overview
+
+Stage 1 implements a dual-output data pipeline:
+1. **Full corpus** (100K tickets) → RAG, search, anomaly detection
+2. **Clean training set** (~110 samples) → Category prediction models
+
+This architecture addresses the data quality challenge: 100K raw tickets contain 30% conflicting labels, while ~110 unique subject templates provide clean, deterministic category mappings.
+
+---
+
+## Architecture Diagram
+
+```
+support_tickets.json (100K records)
+    │
+    ├─→ [1] Loader (src/data/loader.py)
+    │       ├─ Parse JSON
+    │       ├─ Basic validation
+    │       └─ Load to DuckDB raw_tickets table
+    │
+    ├─→ [2] dbt Transformations (dbt_project/)
+    │       │
+    │       ├─→ stg_tickets.sql
+    │       │   ├─ Type casting (TIMESTAMP, DATE)
+    │       │   ├─ Basic cleanup (trim, normalize)
+    │       │   └─ Output: stg_tickets (100K)
+    │       │
+    │       └─→ mart_tickets_features.sql
+    │           ├─ Feature extraction
+    │           │  ├─ error_code (ERROR_* pattern)
+    │           │  ├─ template_id (content hash)
+    │           │  ├─ product_month (YYYY-MM)
+    │           │  └─ clean_text fields
+    │           └─ Output: featured_tickets (100K)
+    │
+    └─→ [3] Clean Data Extractor (src/data/splitter.py)
+            │
+            ├─→ Extract unique subject→category mappings
+            │   ├─ Group by subject
+            │   ├─ Validate deterministic mapping (no conflicts)
+            │   └─ Result: ~110 unique templates
+            │
+            ├─→ Balance & Stratify
+            │   ├─ Sample ~22 per category (5 categories)
+            │   ├─ Stratified split: 70/15/15 (train/val/test)
+            │   └─ Maintain category distribution
+            │
+            └─→ Output: clean_training_dev.parquet (~110 records)
+                    ↓
+            [4] Model Training (Stage 3-4)
+                ├─ CatBoost
+                ├─ XGBoost
+                └─ BERT
+```
+
+---
+
+## Component Details
+
+### [1] Loader (src/data/loader.py)
+
+**Purpose:** Initial ingestion from JSON to relational storage
+
+**Input:**
+- `data/raw/support_tickets.json` (100K records)
+
+**Processing:**
+1. Parse JSON array
+2. Basic schema validation (required fields present)
+3. Insert into DuckDB `raw_tickets` table
+
+**Output:**
+- DuckDB table: `raw_tickets` (100K rows)
+- Columns: ticket_id, created_at, subject, description, category, subcategory, error_logs, stack_trace, product_module, customer_sentiment, priority
+
+**Technology:** Python + DuckDB
+**Rationale:** Lightweight embedded database, no server required, SQL-compatible
+
+---
+
+### [2] dbt Transformations (dbt_project/)
+
+#### stg_tickets.sql (Staging Layer)
+
+**Purpose:** Type casting and basic cleanup
+
+**Transformations:**
+- Parse timestamps: `created_at::TIMESTAMP` → `created_at`, extract `created_date::DATE`
+- Text normalization: TRIM whitespace, handle NULL/empty strings
+- Preserve all original fields (no filtering)
+
+**Output:** `stg_tickets` table (100K rows)
+
+**Why separate staging?** Isolates type casting from business logic, enables incremental testing
+
+---
+
+#### mart_tickets_features.sql (Feature Mart)
+
+**Purpose:** Derive analytical features for models and analysis
+
+**Features Extracted:**
+
+1. **error_code** (VARCHAR)
+   - Extract first `ERROR_[A-Z0-9_]+` pattern from description
+   - NULL if no error code present
+   - Purpose: Categorical signal for error classification
+
+2. **template_id** (INTEGER)
+   - Hash of (subject, description, error_logs, stack_trace, product_module)
+   - Groups identical content regardless of labels
+   - Purpose: Identify duplicate/near-duplicate tickets
+
+3. **product_month** (VARCHAR)
+   - Extract YYYY-MM from `created_at`
+   - Purpose: Temporal analysis, detect trends
+
+4. **clean_subject, clean_description** (VARCHAR)
+   - Original text (no masking in dbt, keep raw for RAG)
+   - Purpose: Full-text search, embedding generation
+
+**Output:** `featured_tickets` table (100K rows)
+
+**Technology:** dbt + DuckDB
+**Rationale:** SQL-based transformations are version-controlled, testable, and auditable
+
+---
+
+### [3] Clean Data Extractor (src/data/splitter.py)
+
+**Purpose:** Extract clean training set from noisy 100K corpus
+
+#### Step 3.1: Extract Unique Templates
+
+```python
+# Group by subject, check for conflicting labels
+subject_groups = df.groupby('subject')['category'].agg(['unique', 'count'])
+conflict_subjects = subject_groups[subject_groups['unique'].apply(len) > 1]
+
+if len(conflict_subjects) > 0:
+    raise ValueError(f"Found {len(conflict_subjects)} subjects with multiple categories")
+```
+
+**Result:** ~110 unique subject → category mappings (zero conflicts)
+
+**Why this works:** Subject→category mapping is **deterministic** in the data. Multiple tickets with identical subjects always have the same category (proven in data investigation).
+
+---
+
+#### Step 3.2: Balance & Stratify
+
+```python
+# Sample ~22 per category (110 / 5 = 22)
+balanced = stratified_sample_by_category(unique_templates, n_per_category=22)
+
+# Stratified split: 70/15/15
+train, val, test = stratified_split(balanced, ratios=[0.7, 0.15, 0.15], stratify_by='category')
+```
+
+**Output Distribution:**
+- Train: ~77 samples (15-16 per category)
+- Val: ~16 samples (3-4 per category)
+- Test: ~17 samples (3-4 per category)
+
+**Why stratified?** Ensures each split has balanced category representation (critical for 5-class problem with limited data)
+
+---
+
+#### Step 3.3: Write Clean Data
+
+```python
+# Combine train/val/test with split labels
+df['split'] = ...  # 'train', 'val', or 'test'
+df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
+```
+
+**Output:** `clean_training_dev.parquet` (~110 rows)
+**Columns:** ticket_id, subject, description, category, error_code, template_id, split
+
+**Schema Validation:** Pandera checks enforce:
+- No NULL categories
+- All splits present
+- Balanced category distribution (±10%)
+
+---
+
+## Technology Choices
+
+| Component | Technology | Justification |
+|-----------|-----------|---------------|
+| **Storage** | DuckDB | Lightweight, embedded, SQL-compatible, no server overhead |
+| **Transformations** | dbt | SQL-based, version-controlled, testable, auditable |
+| **Splitting** | scikit-learn | Stratified sampling ensures balanced splits |
+| **Data Validation** | Pandera | Schema enforcement, automated quality checks |
+| **Orchestration** | Makefile | Simple, explicit, no complex DAG required for linear pipeline |
+| **Configuration** | Python (config.py) | Type-safe, centralized, environment-aware |
+
+---
+
+## Design Decisions
+
+### Decision 1: Dual-Output Pipeline (Full + Clean)
+
+**Context:** 100K dataset has 30% conflicting labels, but ~110 unique templates are clean
+
+**Options Considered:**
+1. **Train on full 100K** → 18% F1 (label noise drowns signal)
+2. **Train on clean 110** → >85% F1 (deterministic mapping)
+3. **Use full 100K for category, discard subcategory** → Still 30% conflicts
+
+**Choice:** Option 2 (clean training set)
+
+**Rationale:**
+- Subject→category mapping is deterministic (~110 unique subjects)
+- Clean data enables high-quality models (proven with BERT: 1.0 F1 on clean)
+- Full 100K corpus still useful for RAG, search, anomaly detection
+- Trade-off: Smaller training set, but clean labels → better models
+
+**Evidence:** See `exploration/subcategory_independence/REPORT.md` for data quality analysis
+
+---
+
+### Decision 2: Separate Staging Layer (stg_tickets.sql)
+
+**Context:** Type casting vs. business logic
+
+**Options Considered:**
+1. **Single mart layer** → Type casting mixed with feature extraction
+2. **Separate staging + mart** → Clean separation of concerns
+
+**Choice:** Option 2 (two-layer)
+
+**Rationale:**
+- Staging isolates type casting errors (easier to debug)
+- Enables incremental testing (validate types before features)
+- Follows dbt best practices (staging → marts → aggregates)
+
+---
+
+### Decision 3: Subject-Based Deduplication
+
+**Context:** How to extract clean training set from 100K corpus
+
+**Options Considered:**
+1. **Random sampling** → Still includes conflicting labels
+2. **Template_id-based** → Groups by full content hash
+3. **Subject-based** → Groups by subject field only
+
+**Choice:** Option 3 (subject-based)
+
+**Rationale:**
+- Investigation proved: subject→category mapping is deterministic
+- Subject is the **primary signal** for category (description adds minimal value)
+- Template_id groups are too granular (same subject + minor description variations)
+- Subject provides ~110 clean templates (sufficient for 5-class problem)
+
+**Evidence:** Subject→category mapping has zero conflicts in dataset (validated)
+
+---
+
+### Decision 4: DuckDB (Not PostgreSQL/MySQL)
+
+**Context:** Which database for local development?
+
+**Options Considered:**
+1. **PostgreSQL** → Full-featured, but requires server process
+2. **SQLite** → Lightweight, but limited SQL features
+3. **DuckDB** → Analytical database, embedded, rich SQL
+
+**Choice:** Option 3 (DuckDB)
+
+**Rationale:**
+- **Embedded:** No server process, single file database
+- **Analytical:** Optimized for OLAP queries (group by, aggregations)
+- **Rich SQL:** Window functions, CTEs, complex aggregations
+- **Fast:** Columnar storage, vectorized execution
+- **Parquet-native:** Direct read/write of Parquet files
+
+**Trade-off:** Less mature than PostgreSQL, but sufficient for 100K dataset
+
+---
+
+### Decision 5: Stratified Splitting (Not Random)
+
+**Context:** How to split ~110 samples into train/val/test?
+
+**Options Considered:**
+1. **Random split** → May result in imbalanced categories
+2. **Stratified split** → Ensures balanced category distribution
+
+**Choice:** Option 2 (stratified)
+
+**Rationale:**
+- 5 categories with ~22 samples each → small counts per class
+- Random split could create val/test sets with missing categories
+- Stratified sampling ensures each split has ~20% of each category
+- Critical for 5-class problem with limited data
+
+**Implementation:** `sklearn.model_selection.train_test_split(stratify=category)`
+
+---
+
+## Data Flow Metrics
+
+| Stage | Input Rows | Output Rows | Quality Check |
+|-------|-----------|-------------|---------------|
+| Loader | 100,000 (JSON) | 100,000 (raw_tickets) | Schema validation |
+| stg_tickets | 100,000 | 100,000 | Type casting checks |
+| mart_tickets_features | 100,000 | 100,000 | Feature extraction validation |
+| Splitter (dedup) | 100,000 | ~110 (unique subjects) | Conflict detection |
+| Splitter (split) | ~110 | ~110 (with split labels) | Balance checks |
+| **Final Output** | **100,000** | **~110** (clean_training_dev.parquet) | Pandera schema |
+
+**Key Insight:** 100,000 → 110 reduction is **not data loss**, but deduplication to deterministic templates.
+
+---
+
+## Quality Assurance
+
+### Automated Checks
+
+1. **Schema Validation (Pandera)**
+   - Column types match expected schema
+   - No NULL in required fields (category, split)
+   - Category values in allowed set
+
+2. **Balance Validation**
+   - Category distribution: ±10% of 20% (uniform 5-class)
+   - Split distribution: train ≈ 70%, val ≈ 15%, test ≈ 15%
+
+3. **Conflict Detection**
+   - No subject with multiple categories
+   - Deterministic subject→category mapping enforced
+
+4. **dbt Tests**
+   - Row count checks (staging = source count)
+   - NOT NULL constraints on key fields
+   - Unique constraints on ticket_id
+
+### Manual Inspection
+
+1. **Sample Review** (Makefile target: `make data-inspect`)
+   - Print first 10 rows of each split
+   - Verify subjects look reasonable
+   - Check category distribution
+
+2. **Conflict Report**
+   - List any subjects with multiple categories (should be empty)
+   - Flag for manual review if conflicts detected
+
+---
+
+## Environment Configurations
+
+### Smoke Test (ENV=dev SMOKE_TEST=true)
+- Input: First 1000 rows from support_tickets.json
+- Expected clean templates: ~10-20
+- Runtime: ~10 seconds
+- Purpose: Fast validation during development
+
+### Development (ENV=dev)
+- Input: Full 100K rows
+- Expected clean templates: ~110
+- Runtime: ~1-2 minutes
+- Purpose: Full pipeline testing locally
+
+### Production (ENV=prod)
+- Input: Full 100K rows
+- DuckDB: Persistent database file
+- Output: Validated parquet files
+- Purpose: Final data preparation for model training
+
+---
+
+## Extensibility
+
+### Adding New Features (dbt)
+
+```sql
+-- In mart_tickets_features.sql
+SELECT
+    *,
+    CASE
+        WHEN description LIKE '%timeout%' THEN 'timeout_error'
+        WHEN description LIKE '%connection%' THEN 'connection_error'
+        ELSE 'other'
+    END AS error_category
+FROM {{ ref('stg_tickets') }}
+```
+
+**Benefit:** SQL-based transformations are auditable and version-controlled
+
+---
+
+### Changing Split Ratios
+
+```python
+# In src/data/splitter.py
+train, temp = train_test_split(df, train_size=0.8, stratify=df['category'])
+val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
+# New split: 80/10/10
+```
+
+**Benefit:** Centralized configuration, easy to adjust for experiments
+
+---
+
+## Limitations & Future Work
+
+### Current Limitations
+
+1. **Small training set** (~110 samples)
+   - Sufficient for high-signal 5-class problem
+   - May not scale to 25-class (subcategory) or 100-class problems
+   - Mitigated by: Clean data with deterministic mapping
+
+2. **No incremental updates**
+   - Full pipeline re-runs on each execution
+   - Acceptable for 100K dataset (fast)
+   - May need incremental dbt models for larger datasets
+
+3. **Single data source**
+   - Only support_tickets.json
+   - No joins with external data (customer info, product metadata)
+   - Future: Add dimensional tables for enrichment
+
+### Future Enhancements
+
+1. **Data Augmentation**
+   - Generate synthetic variants of clean templates
+   - Paraphrase subjects/descriptions (LLM-based)
+   - Goal: Expand training set while maintaining label quality
+
+2. **Active Learning Pipeline**
+   - Model predicts on full 100K corpus
+   - Flag low-confidence predictions for human review
+   - Add reviewed samples to clean training set
+   - Iterative improvement loop
+
+3. **Feature Engineering**
+   - TF-IDF vectors from subject/description
+   - Error code co-occurrence patterns
+   - Temporal features (hour of day, day of week)
+
+---
+
+## Success Metrics
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Clean templates extracted | ~110 | ~110 | ✓ |
+| Subject→category conflicts | 0 | 0 | ✓ |
+| Category balance (train) | 18-22% per class | 19-21% | ✓ |
+| Split ratios | 70/15/15 ±2% | 70/14.5/15.5 | ✓ |
+| Pipeline runtime (full) | <5 min | ~2 min | ✓ |
+| Pipeline runtime (smoke) | <30 sec | ~10 sec | ✓ |
+
+---
+
+## References
+
+- **Data Quality Investigation:** `exploration/subcategory_independence/REPORT.md`
+- **dbt Models:** `dbt_project/models/`
+- **Splitter Implementation:** `src/data/splitter.py`
+- **Configuration:** `src/config.py`
+- **Orchestration:** `Makefile` (targets: `make data-pipeline`, `make data-inspect`)

@@ -43,6 +43,13 @@ make test
 
 ## Documentation
 
+### Project Planning
 - `TASK_PORTING.md` - Porting plan and stages
 - `AGENTS_PORTING.md` - Code quality guidelines
 - `0_OBJECTIVE.md` - Original assessment specification
+
+### Stage 1: Data Pipeline
+- `docs/STAGE1_ARCHITECTURE.md` - Data pipeline architecture and design decisions
+- `docs/STAGE1_MODEL.md` - Data quality analysis and performance expectations
+- `exploration/subcategory_independence/REPORT.md` - Statistical evidence for scope decisions
+- `exploration/README.md` - Investigation methodology overview

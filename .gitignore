@@ -19,6 +19,9 @@ reports/sentiment_comparison_*.md
 schemas/api_contract_*.json
 catboost_info/
 
+# Exploration artifacts (regenerated locally)
+exploration/**/artifacts/
+
 # dbt runtime outputs
 dbt_project/.user.yml
 dbt_project/logs/
