@@ -356,6 +356,8 @@ train-sentiment:
 >@echo "Sentiment training complete. Check metrics/ and figures/ for results."
 
 # RAG search index target (Phase 2 - not part of 'all')
+build-search-index:
+>env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) $(POETRY) run python scripts/build_search_index.py
 
 
 # Docker targets for Stage 6
