@@ -20,7 +20,7 @@ from sklearn.model_selection import train_test_split
 from src import config
 
 
-def load_from_duckdb(duckdb_path: Path, table: str = "featured_tickets") -> pd.DataFrame:
+def load_from_duckdb(duckdb_path: Path, table: str = "mart_tickets_features") -> pd.DataFrame:
     """Load processed tickets from dbt output table."""
     con = duckdb.connect(str(duckdb_path), read_only=True)
     try:
@@ -207,7 +207,7 @@ def main() -> int:
     parser.add_argument(
         "--table",
         type=str,
-        default="featured_tickets",
+        default="mart_tickets_features",
         help="dbt output table name",
     )
     parser.add_argument(

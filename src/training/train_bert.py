@@ -40,7 +40,11 @@ def _compose_text(df: pd.DataFrame) -> list[str]:
 
 def _load_splits(parquet_path: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not parquet_path.exists():
-        raise FileNotFoundError(f"Missing clean training data at {parquet_path}")
+        raise FileNotFoundError(
+            f"Clean training data not found: {parquet_path}\n\n"
+            f"Please run the data pipeline first:\n"
+            f"  ENV={config.ENV} make data-pipeline\n"
+        )
 
     df = pd.read_parquet(parquet_path)
     train_df = df[df["split"] == "train"].copy()
@@ -200,21 +204,39 @@ def train(
         )
 
         summary = {
+            "model": "distilbert",
             "classifier": "category",
-            "model_dir": str(model_dir),
-            "dataset_path": str(parquet_path),
-            "epochs_ran": len(history.history.get("loss", [])),
-            "training_time_seconds": train_seconds,
-            "n_train_samples": len(train_df),
-            "n_val_samples": len(val_df),
-            "n_test_samples": len(test_df),
-            "f1_weighted": float(metrics["f1_weighted"]),
-            "f1_macro": float(metrics["f1_macro"]),
-            "accuracy": float(metrics["accuracy"]),
-            "recall_macro": float(metrics["recall_macro"]),
-            "precision_macro": float(metrics["precision_macro"]),
-            "ece": float(metrics["ece"]),
+            "data": {
+                "path": str(parquet_path),
+                "train_rows": len(train_df),
+                "val_rows": len(val_df),
+                "test_rows": len(test_df),
+                "smoke_test": config.SMOKE_TEST,
+            },
+            "params": {
+                "preset": config.BERT_PRESET,
+                "batch_size": config.BERT_BATCH_SIZE,
+                "epochs": config.BERT_EPOCHS,
+                "learning_rate": config.BERT_LR,
+                "weight_decay": config.BERT_WEIGHT_DECAY,
+                "max_len": config.BERT_MAX_LEN,
+                "early_stop_patience": config.BERT_EARLY_STOP_PATIENCE,
+                "epochs_ran": len(history.history.get("loss", [])),
+            },
+            "metrics": {
+                "f1_weighted": float(metrics["f1_weighted"]),
+                "f1_macro": float(metrics["f1_macro"]),
+                "accuracy": float(metrics["accuracy"]),
+                "recall_macro": float(metrics["recall_macro"]),
+                "precision_macro": float(metrics["precision_macro"]),
+                "ece": float(metrics["ece"]),
+            },
             "latency": latency,
+            "artifacts": {
+                "model_dir": str(model_dir),
+                "per_class_metrics": str(config.PER_CLASS_MDEEPL_PATH),
+            },
+            "training_time_seconds": train_seconds,
         }
 
         summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -236,10 +258,10 @@ def train(
         )
         mlflow_utils.log_metrics(
             {
-                "test_f1_weighted": summary["f1_weighted"],
-                "test_f1_macro": summary["f1_macro"],
-                "test_accuracy": summary["accuracy"],
-                "test_ece": summary["ece"],
+                "test_f1_weighted": summary["metrics"]["f1_weighted"],
+                "test_f1_macro": summary["metrics"]["f1_macro"],
+                "test_accuracy": summary["metrics"]["accuracy"],
+                "test_ece": summary["metrics"]["ece"],
                 "training_time_seconds": summary["training_time_seconds"],
                 "latency_p50_ms": latency["single_sample_p50_ms"],
                 "latency_p95_ms": latency["single_sample_p95_ms"],
@@ -286,7 +308,8 @@ def main() -> int:
     summary = train(args.parquet_path, args.model_dir, args.summary_path)
     print(
         "BERT training complete: "
-        f"f1_weighted={summary['f1_weighted']:.4f}, accuracy={summary['accuracy']:.4f}"
+        f"f1_weighted={summary['metrics']['f1_weighted']:.4f}, "
+        f"accuracy={summary['metrics']['accuracy']:.4f}"
     )
     return 0
 

@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stages 3 & 4 (Traditional ML + BERT) complete
+**Status**: ✅ Stage 4.5 (Model Comparison & Reporting) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stage 4.5 (Model Comparison & Reporting)
+**Next**: Stage 5 (Sentiment, Search & Anomaly)
 
 ### What's Been Built
 
@@ -46,8 +46,8 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ### Current Metrics
 
-- **Source code**: Combined Stage 3 + Stage 4
-- **Tests**: 62 passing (57 from Stage 3 + 5 from Stage 4)
+- **Source code**: Combined Stages 3, 4, and 4.5
+- **Tests**: 64 passing (57 from Stage 3 + 5 from Stage 4 + 2 from Stage 4.5)
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -132,9 +132,10 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ## Current Validation Status
 
-**Tests**: 62 passing (pytest)
+**Tests**: 64 passing (pytest)
 - Includes Stage 3 model wrapper and training orchestrator coverage
 - Includes Stage 4 additions (`tests/test_bert_model.py`: 5 passing)
+- Includes Stage 4.5 additions (`tests/test_generate_report.py`: 2 passing)
 
 **Smoke mode**: `SMOKE_TEST=true` uses 100-record subset for fast validation
 
@@ -207,10 +208,14 @@ This finding fundamentally changed the training approach and is documented in [d
   - Tests: `tests/test_bert_model.py` (5 passing)
   - Documentation: DECISIONS.md (D-014, D-015), MODEL.md (BERT section)
 
-- ⏳ **Stage 4.5: Model Comparison & Reporting** (requires Stages 3 and 4)
-  - Generate comprehensive comparison across all models
-  - Complete docs/MODEL.md comparison table
-  - Final model recommendation
+- ✅ **Stage 4.5: Model Comparison & Reporting** (complete)
+  - Report generation script (`scripts/generate_report.py`)
+  - Automated MODEL.md updates with performance comparison table
+  - Standalone comparison report generation
+  - Model recommendation logic based on F1 and latency
+  - Tests: `tests/test_generate_report.py` (2 passing)
+  - Makefile target: `report`
+  - Documentation: automatically updates docs/MODEL.md comparison section
 
 - ⏳ **Stage 5: Sentiment, Search & Anomaly**
   - Sentiment classifier (CatBoost on feedback text)
@@ -232,4 +237,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stages 3 & 4 complete (Feb 9, 2026)
+**Last updated**: Stage 4.5 complete (Feb 9, 2026)

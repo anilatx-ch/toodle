@@ -21,7 +21,7 @@ DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
 .PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
-	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train download-bert train-bert
+	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train download-bert train-bert report
 
 install: check-data check-system install-python install-poetry install-deps install-verify
 
@@ -162,19 +162,28 @@ train-xgboost:
 >ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_xgboost
 >@echo "✓ XGBoost training complete."
 
-train:
->@echo "Running traditional ML training (CatBoost + XGBoost)..."
+train: $(CLEAN_TRAINING_PARQUET_PATH)
+>@echo "Running all model training (CatBoost + XGBoost + BERT)..."
 >ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_training.py --model all
->@echo "✓ Traditional ML training complete."
+>@echo "Training DistilBERT category classifier..."
+>CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
+>@echo "✓ All model training complete."
 
 # Deep Learning (Stage 4)
 
 download-bert:
 >@echo "Downloading DistilBERT preset assets..."
->ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --download-only
+>CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --download-only
 >@echo "✓ DistilBERT preset ready"
 
 train-bert: $(CLEAN_TRAINING_PARQUET_PATH)
 >@echo "Training DistilBERT category classifier..."
->ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
+>CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
 >@echo "✓ BERT training complete. Artifacts saved to models/ and metrics/"
+
+# Model Comparison & Reporting (Stage 4.5)
+
+report:
+>@echo "Generating model comparison report..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/generate_report.py
+>@echo "✓ Report generation complete. See reports/ and docs/MODEL.md"

@@ -33,7 +33,11 @@ def _per_class_path() -> Path:
 
 def _load_split_data(parquet_path: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not parquet_path.exists():
-        raise FileNotFoundError(f"Clean training parquet not found: {parquet_path}")
+        raise FileNotFoundError(
+            f"Clean training data not found: {parquet_path}\n\n"
+            f"Please run the data pipeline first:\n"
+            f"  ENV={config.ENV} make data-pipeline\n"
+        )
 
     df = pd.read_parquet(parquet_path)
     if "split" not in df.columns:
