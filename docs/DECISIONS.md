@@ -2,7 +2,7 @@
 
 **Purpose:** Decision log with rationale for architectural and technical choices
 **Status:** Living document - updated each stage
-**Current Stage:** Stage 1 (Data Pipeline) - Complete
+**Current Stage:** Stage 3 (Traditional ML Training) - Complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -203,7 +203,16 @@ Each decision entry follows this structure:
 ---
 
 ### Stage 3: Traditional ML Models
-Decisions for CatBoost and XGBoost hyperparameters, training strategy will be added here.
+
+#### D-013: Hyperparameter Tuning Strategy
+
+**Decision:** Use Optuna with a small, bounded search budget (10 trials in smoke mode, 20 trials in full mode).
+
+**Rationale:** The clean category dataset is intentionally small (~110 balanced samples). Large search budgets overfit quickly and inflate runtime for minimal gain. A constrained search over core CatBoost/XGBoost knobs provides enough exploration while preserving generalization and reproducibility.
+
+**Trade-offs:** Lower chance of finding a globally optimal configuration vs substantially lower overfitting risk and faster iteration.
+
+**Status:** Implemented
 
 ### Stage 4: Deep Learning (BERT)
 Decisions for fine-tuning approach, architecture choices will be added here.

@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 2.5 (Evaluation & Experiment Tracking) complete
+**Status**: ✅ Stage 3 (Traditional ML Training) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stages 3 and 4 (can run in parallel)
+**Next**: Stage 4 (Deep Learning / DistilBERT)
 
 ### What's Been Built
 
@@ -32,11 +32,17 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Latency benchmarking utilities
   - MLflow logging utilities
   - Evaluation orchestration script
+- **Stage 3**: Traditional ML Training
+  - CatBoost and XGBoost model wrappers
+  - Training pipelines on clean train/val/test split parquet
+  - Optional Optuna tuning with bounded trial counts for small clean dataset
+  - MLflow logging, evaluation summaries, and latency profiling
+  - Training orchestration script (`scripts/run_training.py`)
 
 ### Current Metrics
 
-- **Source code**: 2104 lines in `src/` (was ~850 after Stage 2)
-- **Tests**: 48 passing (was 42 after Stage 2)
+- **Source code**: 2952 lines in `src/`
+- **Tests**: 57 passing
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -121,10 +127,8 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ## Current Validation Status
 
-**Tests**: 19 passing (pytest)
-- Configuration import and path resolution
-- Data pipeline (loader, splitter, hierarchy)
-- dbt model tests
+**Tests**: 57 passing (pytest)
+- Includes Stage 3 model wrapper and training orchestrator coverage
 
 **Smoke mode**: `SMOKE_TEST=true` uses 100-record subset for fast validation
 
@@ -139,7 +143,7 @@ This finding fundamentally changed the training approach and is documented in [d
 
 **Technical Documentation**:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and data flow (living doc)
-- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-011 (living doc)
+- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-013 (living doc)
 - [docs/MODEL.md](docs/MODEL.md) - Model performance and data quality analysis (living doc)
 
 **Setup and Usage**:
@@ -180,14 +184,17 @@ This finding fundamentally changed the training approach and is documented in [d
   - Documentation: DECISIONS.md (D-010, D-011), docs/MODEL.md (initial structure)
   - **Current**: 2104 LOC in src/
 
-- ⏳ **Stage 3: Traditional ML Models** (can run in parallel with Stage 4)
+- ✅ **Stage 3: Traditional ML Models** (complete)
   - CatBoost and XGBoost training on clean ~110 samples
   - Optuna hyperparameter tuning
   - MLflow experiment tracking
   - Evaluation metrics and latency analysis
-  - Expected: >85% F1 on category prediction
+  - Training orchestration via `scripts/run_training.py`
+  - Tests: 57 passing (9 new tests)
+  - Documentation: DECISIONS.md (D-013), ARCHITECTURE.md (Stage 3 training), MODEL.md (traditional ML section)
+  - **Current**: 2952 LOC in src/
 
-- ⏳ **Stage 4: Deep Learning (BERT)** (can run in parallel with Stage 3)
+- ⏳ **Stage 4: Deep Learning (BERT)** (next)
   - DistilBERT fine-tuning on clean ~110 samples
   - Text-only training path (multimodal as option)
   - Model comparison report (BERT vs CatBoost vs XGBoost)
@@ -218,4 +225,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stage 2.5 complete (Feb 9, 2026)
+**Last updated**: Stage 3 complete (Feb 9, 2026)

@@ -1,20 +1,60 @@
 # Model Documentation
 
 **Purpose:** Model performance benchmarks, comparisons, and feature importance
-**Status:** Living document - Stage 1 (pre-training baseline), training results added in Stage 3-4
+**Status:** Living document - Stage 3 traditional ML implementation complete
 **Last Updated:** 2026-02-09
 
 ---
 
 ## Overview
 
-Stage 1 focuses on **data preparation**, not model training. However, data quality analysis conducted during preparation informs expected model performance and design decisions.
+Stage 3 adds runnable CatBoost and XGBoost training pipelines on clean split data with:
+- shared feature artifacts (`FeaturePipeline` + TF-IDF vectorizer)
+- optional Optuna tuning with bounded trial counts
+- standardized evaluation (weighted F1 primary)
+- latency benchmarking and MLflow logging
 
 This document provides:
-1. **Performance baselines** (expected from Stage 3-4 models)
-2. **Data quality findings** (why clean data approach)
-3. **Error analysis** (predicted failure modes)
-4. **Experiment tracking** (reproducibility)
+1. **Stage 3 traditional ML model details**
+2. **Performance baselines** (used before full training artifacts are generated)
+3. **Data quality findings** (why clean data approach)
+4. **Error analysis** (predicted failure modes)
+
+---
+
+## Category Classification
+
+### Problem Definition
+
+Predict support ticket category from text and metadata.
+- **Classes:** 5 categories (Account Management, Data Issue, Feature Request, Security, Technical Issue)
+- **Training data:** clean deduplicated subject→category set (`clean_training_<env>.parquet`)
+- **Primary metric:** weighted F1
+
+### Traditional ML Models
+
+#### CatBoost
+- **Architecture:** gradient boosting classifier with multiclass objective
+- **Features:** TF-IDF text + tabular features from `FeaturePipeline`
+- **Training entrypoint:** `python -m src.training.train_catboost`
+- **Optuna strategy:** optional bounded search (small-budget trials for clean dataset)
+- **Artifacts:** model (`.cbm`), per-class metrics CSV, JSON summary, MLflow run
+
+#### XGBoost
+- **Architecture:** histogram-based gradient boosting with multiclass soft probabilities
+- **Features:** same feature pipeline as CatBoost
+- **Training entrypoint:** `python -m src.training.train_xgboost`
+- **Optuna strategy:** optional bounded search (same budget policy as CatBoost)
+- **Artifacts:** model (`.json`), per-class metrics CSV, JSON summary, MLflow run
+
+### Stage 3 Performance
+
+Performance values are written at runtime to:
+- `metrics/<env>/catboost_training_summary.json`
+- `metrics/<env>/xgboost_training_summary.json`
+
+The repository does not include training datasets/artifacts, so committed docs track
+the training interfaces and artifact contract; numeric benchmark values are filled after local runs.
 
 ---
 
@@ -471,19 +511,12 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 
 ---
 
-## Next Steps (Stage 3-4)
+## Next Steps (Stage 4+)
 
-### Stage 3: Model Training
-1. Implement CatBoost baseline
-2. Implement XGBoost comparison
-3. Fine-tune BERT (if resources allow)
-4. Compare performance to expected baselines
-
-### Stage 4: Evaluation
-1. Generate confusion matrices (identify weak categories)
-2. Error analysis (sample misclassifications)
-3. Confidence calibration (plot predicted probs vs actual accuracy)
-4. Performance profiling (inference latency, memory usage)
+### Stage 4: Deep Learning Comparison
+1. Implement DistilBERT training on clean split data
+2. Align evaluation/latency reporting with traditional ML outputs
+3. Compare BERT vs CatBoost vs XGBoost on identical test split
 
 ### Stage 5+: Iteration
 1. Active learning (expand training set)
@@ -502,13 +535,13 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 
 ---
 
-## Stage 3-4: Actual Model Performance (To Be Added)
+## Actual Model Performance (To Be Added From Runtime Artifacts)
 
 ### CatBoost Results
-[Metrics, confusion matrix, feature importance - to be added after training]
+[Loaded from `metrics/<env>/catboost_training_summary.json`]
 
 ### XGBoost Results
-[Metrics, confusion matrix, feature importance - to be added after training]
+[Loaded from `metrics/<env>/xgboost_training_summary.json`]
 
 ### DistilBERT Results
 [Metrics, confusion matrix, attention analysis - to be added after training]

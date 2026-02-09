@@ -7,6 +7,8 @@ data/embeddings/
 # Artifacts
 /models/
 data/
+!src/data/
+!src/data/*.py
 diagnostics/*
 figures*
 figures/
@@ -44,3 +46,4 @@ __pycache__/
 .dbt/
 .idea/
 .pyenv/
+.venv

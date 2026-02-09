@@ -21,7 +21,7 @@ DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
 .PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
-	data-pipeline dbt-run dbt-test features evaluate
+	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train
 
 install: check-data check-system install-python install-poetry install-deps install-verify
 
@@ -149,3 +149,20 @@ evaluate:
 >@echo "Running model evaluation..."
 >ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py
 >@echo "✓ Evaluation complete. Results saved to metrics/ and figures/"
+
+# Traditional ML training (Stage 3)
+
+train-catboost:
+>@echo "Training CatBoost (category classifier)..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_catboost
+>@echo "✓ CatBoost training complete."
+
+train-xgboost:
+>@echo "Training XGBoost (category classifier)..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_xgboost
+>@echo "✓ XGBoost training complete."
+
+train:
+>@echo "Running traditional ML training (CatBoost + XGBoost)..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_training.py --model all
+>@echo "✓ Traditional ML training complete."

@@ -2,16 +2,17 @@
 
 **Purpose:** Technical architecture documentation for TOODLE
 **Status:** Living document - updated each stage
-**Current Stage:** Stage 1 (Data Pipeline) - Complete
+**Current Stage:** Stage 3 (Traditional ML Training) - Complete
 **Last Updated:** 2026-02-09
 
 ---
 
 ## Overview
 
-Stage 1 implements a dual-output data pipeline:
+The core system now includes Stage 1-3 components:
 1. **Full corpus** (100K tickets) → RAG, search, anomaly detection
 2. **Clean training set** (~110 samples) → Category prediction models
+3. **Traditional ML trainers** (CatBoost + XGBoost) with MLflow and evaluation artifacts
 
 This architecture addresses the data quality challenge: 100K raw tickets contain 30% conflicting labels, while ~110 unique subject templates provide clean, deterministic category mappings.
 
@@ -190,6 +191,38 @@ df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
 - No NULL categories
 - All splits present
 - Balanced category distribution (±10%)
+
+---
+
+### [4] Traditional ML Training (Stage 3)
+
+**Purpose:** Train and evaluate CatBoost and XGBoost on the clean split dataset.
+
+**Core modules:**
+- `src/models/catboost_model.py`
+- `src/models/xgboost_model.py`
+- `src/training/train_catboost.py`
+- `src/training/train_xgboost.py`
+- `src/training/run_training.py`
+- `scripts/run_training.py`
+
+**Training flow:**
+1. Read `clean_training_<env>.parquet`
+2. Fit `FeaturePipeline` for category classification
+3. Build train/val/test matrices from the same feature contract
+4. Optional Optuna search over bounded hyperparameter spaces
+5. Train model, evaluate on test split, benchmark latency
+6. Save model + per-class metrics + JSON summary + MLflow run
+
+**Artifact contract:**
+- Models: `models/catboost_category_<env>.cbm`, `models/xgboost_category_<env>.json`
+- Summaries: `metrics/<env>/catboost_training_summary.json`, `metrics/<env>/xgboost_training_summary.json`
+- Per-class metrics: `metrics/<env>/catboost_per_class.csv`, `metrics/<env>/xgboost_per_class.csv`
+
+**Operational targets:**
+- `make train-catboost`
+- `make train-xgboost`
+- `make train`
 
 ---
 
@@ -481,12 +514,6 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 ---
 
 ## Future Stages (Planned)
-
-### Stage 2: Feature Engineering
-[To be documented]
-
-### Stage 3: Traditional ML Models
-[To be documented]
 
 ### Stage 4: Deep Learning (BERT)
 [To be documented]
