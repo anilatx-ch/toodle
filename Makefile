@@ -123,7 +123,7 @@ install-poetry:
 >"$(PYTHON)" -m pip install --upgrade poetry
 
 install-deps:
->$(POETRY) install --with dl,tracking,api,dbt,explain,eda,dev
+>$(POETRY) install --with dl,tracking,api,dbt,dev
 >"$(PYTHON)" -m pip install nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cufft-cu12 \
 >  nvidia-cusolver-cu12 nvidia-cusparse-cu12 nvidia-cuda-cupti-cu12
 
