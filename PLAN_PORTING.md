@@ -105,119 +105,38 @@ Each stage ends with: tests green, documentation updated, review with user, user
 
 ---
 
-### ✅ Stage 0: Scaffold & Config (COMPLETE)
+### ✅ Stages 0-2: Complete
 
-**Status:** Complete - See git history and `docs/DECISIONS.md` (D-001 to D-005) for details
+- **Stage 0:** Project scaffold, configuration (D-001 to D-005)
+- **Stage 1:** Data pipeline, dbt, clean training set (D-006, D-007)
+- **Stage 2:** Feature engineering, TF-IDF, categorical encoding (D-008, D-009)
 
-**Deliverables:**
-- Project skeleton (pyproject.toml, Makefile, Docker, config.py)
-- Infrastructure configuration (paths, environment handling)
-- Initial documentation structure (README.md, docs/DECISIONS.md)
-- 9 tests passing
+See git history and `docs/DECISIONS.md` for details.
 
 ---
 
-### ✅ Stage 1: Data Pipeline (COMPLETE)
+### Stage 2.5: Evaluation & Experiment Tracking Infrastructure
 
-**Status:** Complete - See git history, `docs/ARCHITECTURE.md`, and `docs/DECISIONS.md` (D-006, D-007) for details
+**Goal**: Set up shared evaluation and MLflow infrastructure used by both traditional ML (Stage 3) and BERT (Stage 4).
 
-**Deliverables:**
-- Dual-output data pipeline (full 100K corpus + clean ~110 training set)
-- dbt transformations (DuckDB → staging → features)
-- Clean subject deduplication and stratified splitting
-- Data quality validation (schema checks, balance verification)
-- 19 tests passing total
-
-**Key Implementation:**
-- `src/data/` (loader, splitter, schema)
-- `dbt_project/` (models, profiles)
-- `src/models/hierarchy.py` (category derivation)
-
----
-
-### Stage 2: Feature Engineering
-
-**Goal**: Feature pipeline produces TF-IDF + tabular matrices from split parquet.
+This stage extracts evaluation components that both model training stages need, enabling parallel development.
 
 **Port**:
-- `src/features/__init__.py`
-- `src/features/pipeline.py` — clean (remove subcategory spec references, simplify)
-- `src/features/text.py` (~53L, clean)
-- `src/features/categorical.py` (~55L, clean)
-- `src/features/numerical.py` (~63L, clean)
-- `src/features/preprocessing.py` — trim unused augmentation (279→~150L)
-- `src/features/entities.py` (~172L, used by search — port as-is or light trim)
-- `scripts/run_features.py`
+- `src/evaluation/metrics.py` (~97L) - F1, accuracy, classification reports
+- `src/evaluation/analysis.py` (~86L) - confusion matrices, per-class analysis
+- `src/evaluation/latency.py` (~39L) - inference latency profiling
+- `src/mlflow_utils.py` (~131L) - MLflow logging utilities
+- `scripts/run_evaluation.py` - evaluation orchestration
 
-**DO NOT port**: minimal_pipeline.py
+**Tests**:
+- `test_metrics.py` - test metric calculations
+- `test_evaluation.py` - test evaluation workflow with dummy predictions
 
-**Key cleanups**:
-- pipeline.py: Remove `create_multi_classifier_pipelines` factory (only needed for deferred multi-classifier batch)
-- preprocessing.py: Review each augmentation; remove any that feed only dropped classifiers
+**Makefile targets**: `evaluate`
 
-**Makefile targets**: `features`
-**Tests**: test_features.py, test_preprocessing.py (trimmed), test_entities.py
+#### Documentation Deliverables (Stage 2.5)
 
-#### Documentation Deliverables (Stage 2)
-
-**Append to `docs/DECISIONS.md`**:
-
-```markdown
-## D-008: Feature Engineering Approach
-**Decision**: TF-IDF for text + one-hot encoding for categoricals + standard scaling for numericals
-**Rationale**: Simple, interpretable features that work well with gradient boosting. TF-IDF captures term importance without embedding overhead. Categorical encoding preserves interpretability.
-**Trade-off**: Less semantic richness than embeddings, but faster and more debuggable.
-
-## D-009: Feature Pipeline Simplification
-**Decision**: Single unified pipeline (remove multi-classifier factory)
-**Rationale**: Original design anticipated multiple classifier targets sharing feature pipelines. With only category as real target (priority/sentiment are placeholders), the factory pattern adds complexity without benefit.
-**Trade-off**: Less flexibility for future expansion, but cleaner current code.
-```
-
-**Update `docs/ARCHITECTURE.md`**: Add Feature Engineering section.
-
-**Update `CONTEXT.md`**:
-- Mark Stage 2 as ✅ complete
-- Update "Current Stage" to reflect Stage 3 as next
-- Update test counts and source LOC count
-
----
-
-### Stage 3: Traditional ML Models + Evaluation
-
-**Goal**: CatBoost and XGBoost train on clean ~110 samples, evaluate, save artifacts, log to MLflow.
-
-All training uses the **clean deduplicated dataset** from Stage 1 (not the noisy 100K).
-With clean labels, these models should achieve **>85% F1** on category prediction.
-
-**Port**:
-- `src/models/catboost_model.py` (~123L, clean)
-- `src/models/xgboost_model.py` (~166L, clean)
-- `src/training/train_catboost.py` — trim (~373→~250L)
-- `src/training/train_xgboost.py` — trim (~372→~250L)
-- `src/evaluation/metrics.py` (~97L)
-- `src/evaluation/analysis.py` (~86L)
-- `src/evaluation/latency.py` (~39L)
-- `src/mlflow_utils.py` (~131L, clean)
-- `scripts/run_training.py` — simplified (no LightGBM)
-- `scripts/run_evaluation.py`
-
-**DO NOT port**: lightgbm_model.py, train_lightgbm.py
-
-**Key cleanups in training scripts**:
-- Training loads the clean split parquet (not the full noisy parquet)
-- Hyperparams tuned for ~110 samples (fewer iterations, appropriate regularization)
-- Remove subcategory-specific summary path logic
-- Tighten MLflow tagging (remove redundant tags)
-- Consider extracting shared `_prepare_splits` / `_load_or_fit_pipeline` / `_log_metrics` into a small `training/_common.py` if it reduces net lines (only if it actually helps)
-- Optuna search space reduced for small dataset (fewer trials needed)
-
-**Makefile targets**: `train-catboost`, `train-xgboost`, `evaluate`, `report`
-**Tests**: test_catboost.py, test_xgboost.py, test_evaluation.py, test_run_training.py
-
-#### Documentation Deliverables (Stage 3)
-
-**Create `docs/MODEL.md`**:
+**Create `docs/MODEL.md`** initial structure:
 
 ```markdown
 # Model Documentation
@@ -230,36 +149,17 @@ Predict support ticket category from ticket text and metadata.
 - **Training data**: ~110 deduplicated subject→category pairs (balanced ~22 per class)
 - **Evaluation**: Weighted F1 score (target: >85%)
 
-### Traditional ML Models
-
-#### CatBoost
-- **Architecture**: Gradient boosting with native categorical handling
-- **Features**: TF-IDF text vectors + categorical encodings + numerical features
-- **Hyperparameters**: [Tuned via Optuna, logged in MLflow]
-- **Performance**: [F1: X.XX, Accuracy: X.XX] ← filled after training
-
-#### XGBoost
-- **Architecture**: Gradient boosting with histogram-based splits
-- **Features**: Same as CatBoost
-- **Hyperparameters**: [Tuned via Optuna, logged in MLflow]
-- **Performance**: [F1: X.XX, Accuracy: X.XX] ← filled after training
-
 ### Model Comparison
-| Model    | F1 Score | Accuracy | Latency (p50) | Latency (p99) |
-|----------|----------|----------|---------------|---------------|
-| CatBoost | X.XX     | X.XX     | X ms          | X ms          |
-| XGBoost  | X.XX     | X.XX     | X ms          | X ms          |
-
-[To be completed after training runs]
+[To be filled by Stages 3, 4, and 4.5]
 ```
 
 **Append to `docs/DECISIONS.md`**:
 
 ```markdown
-## D-010: Hyperparameter Tuning Strategy
-**Decision**: Optuna with reduced trial count for small dataset
-**Rationale**: With ~110 training samples, extensive tuning risks overfitting. Fewer trials (10-20) find reasonable hyperparameters without exhaustive search.
-**Trade-off**: May miss optimal configuration, but prevents over-tuning to small dataset.
+## D-010: Evaluation Metrics
+**Decision**: Weighted F1 as primary metric, with per-class precision/recall
+**Rationale**: Balanced dataset (~22 per class) makes weighted F1 appropriate. Per-class metrics help identify category-specific issues.
+**Trade-off**: Standard metrics; no custom business-weighted scoring.
 
 ## D-011: MLflow Experiment Structure
 **Decision**: Single experiment per model type, runs tagged by data version and config hash
@@ -267,34 +167,92 @@ Predict support ticket category from ticket text and metadata.
 **Trade-off**: Less organization than production MLOps, appropriate for demo.
 ```
 
-**Update `docs/ARCHITECTURE.md`**: Add ML Training section.
-
 **Update `CONTEXT.md`**:
-- Mark Stage 3 as ✅ complete
-- Update "Current Stage" to reflect Stage 4 as next
-- Update test counts, source LOC count, and model performance notes
+- Mark Stage 2.5 as ✅ complete
+- Update "Current Stage" to reflect parallel Stages 3 & 4 as next
+- Update test counts and source LOC count
 
 ---
 
-### Stage 4: Deep Learning (BERT)
+### Stage 3: Traditional ML Training (CAN RUN IN PARALLEL WITH STAGE 4)
 
-**Goal**: DistilBERT trains on clean ~110 samples, evaluates, produces comparison with traditional ML.
+**Goal**: Train CatBoost and XGBoost on clean ~110 samples. Expected >85% F1.
 
-BERT trains on the same clean dataset as trad ML. The BERT_CLEAN config params
-(batch_size=16, epochs=4, patience=2) become the standard BERT config — they're
-already tuned for this ~110-sample regime. Expected: >85% F1 (DOODLE achieved ~1.0 F1
-on clean data with BERT).
+All training uses the **clean deduplicated dataset** from Stage 1 (not the noisy 100K).
+
+**Port**:
+- `src/models/catboost_model.py` (~123L)
+- `src/models/xgboost_model.py` (~166L)
+- `src/training/train_catboost.py` — trim (~373→~250L)
+- `src/training/train_xgboost.py` — trim (~372→~250L)
+- `scripts/run_training.py` — CatBoost/XGBoost parts only
+
+**DO NOT port**: lightgbm_model.py, train_lightgbm.py
+
+**Key cleanups**:
+- Training loads clean split parquet (not full noisy parquet)
+- Hyperparams tuned for ~110 samples (fewer iterations, appropriate regularization)
+- Remove subcategory-specific summary path logic
+- Tighten MLflow tagging (remove redundant tags)
+- Optuna search space reduced for small dataset (10-20 trials)
+
+**Makefile targets**: `train-catboost`, `train-xgboost`
+**Tests**: test_catboost.py, test_xgboost.py, test_run_training.py
+
+**Dependencies**: Stage 1 (data) + Stage 2 (features) + Stage 2.5 (evaluation)
+
+#### Documentation Deliverables (Stage 3)
+
+**Update `docs/MODEL.md`** - add traditional ML sections:
+
+```markdown
+### Traditional ML Models
+
+#### CatBoost
+- **Architecture**: Gradient boosting with native categorical handling
+- **Features**: TF-IDF (5K) + categorical encodings + numerical features
+- **Hyperparameters**: [Logged in MLflow]
+- **Performance**: F1=X.XX, Accuracy=X.XX, Latency p50=X ms
+
+#### XGBoost
+- **Architecture**: Gradient boosting with histogram-based splits
+- **Features**: Same as CatBoost
+- **Hyperparameters**: [Logged in MLflow]
+- **Performance**: F1=X.XX, Accuracy=X.XX, Latency p50=X ms
+```
+
+**Append to `docs/DECISIONS.md`**:
+
+```markdown
+## D-013: Hyperparameter Tuning Strategy
+**Decision**: Optuna with 10-20 trials for small dataset
+**Rationale**: With ~110 training samples, extensive tuning risks overfitting. Reduced trials find reasonable hyperparameters without exhaustive search.
+**Trade-off**: May miss optimal configuration, but prevents over-tuning.
+```
+
+**Update `docs/ARCHITECTURE.md`**: Add Traditional ML Training section.
+
+**Update `CONTEXT.md`**:
+- Mark Stage 3 as ✅ complete
+- Update test counts and source LOC count
+
+---
+
+### Stage 4: Deep Learning Training (CAN RUN IN PARALLEL WITH STAGE 3)
+
+**Goal**: Train DistilBERT on clean ~110 samples (text-only mode). Expected >85% F1.
+
+BERT trains on same clean dataset as trad ML but uses **raw text directly** (no Stage 2 features needed for text-only mode). The BERT_CLEAN config params become standard BERT params.
 
 **Port**:
 - `src/models/bert_model.py` — **significant cleanup** (831→~400L)
-- `src/training/train_bert.py` — **rewritten** to absorb the clean-data training approach from `train_bert_category_clean.py` as the primary path (~300L)
-- `scripts/generate_report.py` — ML comparison report
+- `src/training/train_bert.py` — **rewritten** (~300L, absorb train_bert_category_clean.py approach)
 
 **DO NOT port as separate file**: train_bert_category_clean.py (its approach IS the main training now)
 
 **Key cleanups in bert_model.py**:
-- Simplify XLA/CUDA configuration (remove workarounds that may not be needed)
-- Reduce conditional branches for text-only vs text+tabular (keep both but streamline)
+- Simplify XLA/CUDA configuration (remove unnecessary workarounds)
+- Streamline text-only vs text+tabular branches (keep both but cleaner)
 - Remove excessive safety checks around KerasNLP imports
 - Clean up session cleanup logic
 
@@ -302,24 +260,68 @@ on clean data with BERT).
 - Primary path trains on clean deduplicated data (no separate "clean" mode)
 - BERT_CLEAN params become standard BERT params in config
 - ValF1Callback from train_bert_category_clean.py integrated as standard
-- Simplify epoch/callback setup
 - Align MLflow logging style with trad ML scripts
 
 **Makefile targets**: `train-bert`, `download-bert`
-**Tests**: test_bert_model.py (adapted)
+**Tests**: test_bert_model.py
+
+**Dependencies**: Stage 1 (data) + Stage 2.5 (evaluation)
+**Note**: Does NOT depend on Stage 2 (features) for text-only mode
 
 #### Documentation Deliverables (Stage 4)
 
-**Update `docs/MODEL.md`**: Add BERT section and complete comparison table:
+**Update `docs/MODEL.md`** - add BERT section:
 
 ```markdown
+### Deep Learning Model
+
 #### DistilBERT
 - **Architecture**: DistilBERT base, fine-tuned classification head
 - **Input**: Raw text (tokenized by BERT tokenizer)
 - **Hyperparameters**: batch_size=16, epochs=4, patience=2, lr=2e-5
-- **Performance**: [F1: X.XX, Accuracy: X.XX] ← filled after training
+- **Performance**: F1=X.XX, Accuracy=X.XX, Latency p50=X ms
+```
 
+**Append to `docs/DECISIONS.md`**:
+
+```markdown
+## D-014: BERT Training Configuration
+**Decision**: Small batch (16), few epochs (4), early stopping (patience=2)
+**Rationale**: With ~110 training samples, BERT can overfit quickly. Small batches provide more gradient updates per epoch; early stopping prevents overfitting.
+**Trade-off**: May underfit if data is complex, but clean labels make task straightforward.
+
+## D-015: Text-Only vs Multimodal BERT
+**Decision**: Text-only as primary path, multimodal as option
+**Rationale**: For category classification, subject text is highly predictive (deterministic mapping). Tabular features add complexity without improving clean-data accuracy.
+**Trade-off**: Unused multimodal code path, but demonstrates capability.
+```
+
+**Update `CONTEXT.md`**:
+- Mark Stage 4 as ✅ complete
+- Update test counts and source LOC count
+
+---
+
+### Stage 4.5: Model Comparison & Reporting
+
+**Goal**: Generate comprehensive comparison of all three models (CatBoost, XGBoost, BERT).
+
+This stage requires both Stage 3 and Stage 4 to be complete (all models trained).
+
+**Port**:
+- `scripts/generate_report.py` — ML comparison report generator
+
+**Makefile targets**: `report`
+
+**Dependencies**: Stage 3 (CatBoost/XGBoost trained) + Stage 4 (BERT trained)
+
+#### Documentation Deliverables (Stage 4.5)
+
+**Update `docs/MODEL.md`** - complete comparison table:
+
+```markdown
 ### Final Model Comparison
+
 | Model      | F1 Score | Accuracy | Latency (p50) | Latency (p99) | Size (MB) |
 |------------|----------|----------|---------------|---------------|-----------|
 | CatBoost   | X.XX     | X.XX     | X ms          | X ms          | X         |
@@ -327,27 +329,12 @@ on clean data with BERT).
 | DistilBERT | X.XX     | X.XX     | X ms          | X ms          | X         |
 
 ### Recommendation
-[Analysis of which model to use in production and why]
-```
-
-**Append to `docs/DECISIONS.md`**:
-
-```markdown
-## D-012: BERT Training Configuration
-**Decision**: Small batch (16), few epochs (4), early stopping (patience=2)
-**Rationale**: With ~110 training samples, BERT can overfit quickly. Small batches provide more gradient updates per epoch; early stopping prevents overfitting.
-**Trade-off**: May underfit if data is more complex than expected, but clean labels make task straightforward.
-
-## D-013: Text-Only vs Multimodal BERT
-**Decision**: Keep text-only as primary path, multimodal as option
-**Rationale**: For category classification, subject text is highly predictive (deterministic mapping). Tabular features add complexity without improving clean-data accuracy.
-**Trade-off**: Unused multimodal code path, but demonstrates capability if needed.
+[Analysis of which model to use in production and why - consider accuracy vs latency vs size trade-offs]
 ```
 
 **Update `CONTEXT.md`**:
-- Mark Stage 4 as ✅ complete
+- Mark Stage 4.5 as ✅ complete
 - Update "Current Stage" to reflect Stage 5 as next
-- Update test counts, source LOC count, and model comparison results
 
 ---
 
@@ -382,17 +369,17 @@ on clean data with BERT).
 **Append to `docs/DECISIONS.md`**:
 
 ```markdown
-## D-014: RAG Implementation
+## D-016: RAG Implementation
 **Decision**: FAISS vector search + entity keyword matching (hybrid)
 **Rationale**: Assessment requires "RAG + Graph-RAG". FAISS provides fast semantic search; entity extraction enables keyword/error-code matching. Hybrid approach balances recall and precision.
 **Trade-off**: Not a full knowledge graph, but demonstrates the pattern.
 
-## D-015: Anomaly Detection Scope
+## D-017: Anomaly Detection Scope
 **Decision**: Volume-based anomaly detection on category distribution
 **Rationale**: Assessment requires "detecting emerging issues". Category volume shifts indicate new issue types or outages. Simple statistical approach (z-score on rolling windows) is interpretable and debuggable.
 **Trade-off**: Won't catch subtle semantic shifts, but covers major incidents.
 
-## D-016: Sentiment Model Backend
+## D-018: Sentiment Model Backend
 **Decision**: Single backend (CatBoost) for sentiment
 **Rationale**: Sentiment is secondary to category classification. One well-tuned model suffices for demo. Reduces training time and model storage.
 **Trade-off**: No sentiment model comparison, but demonstrates the capability.
@@ -483,12 +470,12 @@ System health check.
 **Append to `docs/DECISIONS.md`**:
 
 ```markdown
-## D-017: Placeholder Fields in API Response
+## D-019: Placeholder Fields in API Response
 **Decision**: Return priority and sentiment as placeholders with warning flags
 **Rationale**: API contract shows intended multi-output design. Clients can integrate now and receive real predictions when models are added. Warning flags make placeholder status explicit.
 **Trade-off**: Slightly confusing API, but demonstrates extensible design.
 
-## D-018: Model Ensemble Strategy
+## D-020: Model Ensemble Strategy
 **Decision**: Confidence-weighted voting across CatBoost, XGBoost, BERT
 **Rationale**: Ensemble reduces variance and catches cases where one model fails. Confidence weighting trusts more certain predictions.
 **Trade-off**: Higher latency (3 model calls), but better reliability.
