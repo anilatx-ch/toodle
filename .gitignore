@@ -7,6 +7,8 @@ data/embeddings/
 # Artifacts
 /models/
 data/
+!src/data/
+!src/data/*.py
 diagnostics/*
 figures*
 figures/
@@ -18,6 +20,9 @@ reports/model_comparison*.md
 reports/sentiment_comparison_*.md
 schemas/api_contract_*.json
 catboost_info/
+
+# Exploration artifacts (regenerated locally)
+exploration/**/artifacts/
 
 # dbt runtime outputs
 dbt_project/.user.yml
@@ -41,3 +46,4 @@ __pycache__/
 .dbt/
 .idea/
 .pyenv/
+.venv

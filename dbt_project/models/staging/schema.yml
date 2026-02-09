@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_tickets
+    columns:
+      - name: ticket_id
+        tests: [not_null, unique]
+      - name: category
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Account Management', 'Data Issue', 'Feature Request', 'Security', 'Technical Issue']
+      - name: subcategory
+        tests:
+          - not_null
+      - name: priority
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high', 'critical']
+      - name: severity
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['P0', 'P1', 'P2', 'P3', 'P4']
+      - name: customer_sentiment
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['angry', 'confused', 'frustrated', 'grateful', 'neutral', 'satisfied']
+      - name: feedback_text
+        tests: []
