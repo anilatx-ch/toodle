@@ -44,6 +44,7 @@ COPY dbt_project ./dbt_project
 COPY Makefile ./Makefile
 COPY pyproject.toml ./
 
+# Create directories for volume mounts (models, data, reports are mounted at runtime, not baked in)
 RUN mkdir -p ./models ./data ./reports ./mlruns
 
 EXPOSE 8000

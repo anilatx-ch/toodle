@@ -22,11 +22,14 @@ All models train on **clean, deduplicated data** (~110 unique subject→category
 ## Current Stage
 
 ✅ **Stage 0: Scaffold & Config** - Complete
-- Project structure initialized
-- Configuration cleaned (no LightGBM, no subcategory code)
-- Tests passing
+✅ **Stage 1: Data Pipeline** - Complete
+- Dual-output pipeline: full 100K corpus + clean ~110 training set
+- Clean subject→category extraction and balancing
+- Stratified train/val/test split
+- dbt integration
+- 19 tests passing
 
-🚧 **Next: Stage 1: Data Pipeline**
+🚧 **Next: Stage 2: Feature Engineering**
 
 ## Quick Start
 

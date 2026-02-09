@@ -12,9 +12,16 @@ PYTHON_VERSION := 3.12.12
 PYENV_ROOT_DIR ?= $(abspath .pyenv)
 PYTHON ?= $(VENV_DIR)/bin/python
 POETRY ?= $(VENV_DIR)/bin/poetry
+DBT_PROFILES_DIR ?= dbt_project
+DUCKDB_PATH ?= data/processed/tickets_$(ENV).duckdb
 export POETRY_VIRTUALENVS_IN_PROJECT ?= true
 
-.PHONY: install install-system install-python install-poetry install-deps install-verify check-data setup test
+CLEAN_TRAINING_PARQUET_PATH ?= data/processed/clean_training_$(ENV).parquet
+DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
+RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
+
+.PHONY: install install-system install-python install-poetry install-deps install-verify check-data setup test \
+	data-pipeline dbt-run dbt-test
 
 install: check-data install-system install-python install-poetry install-deps install-verify
 
@@ -73,3 +80,19 @@ setup: install-deps
 
 test:
 >ENV=dev SMOKE_TEST=true $(POETRY) run pytest
+
+# Data pipeline (Stage 1)
+
+data-pipeline: $(CLEAN_TRAINING_PARQUET_PATH)
+
+$(CLEAN_TRAINING_PARQUET_PATH): src/data/loader.py src/data/splitter.py src/config.py $(DBT_MODEL_SOURCES) $(RAW_TICKET_JSON)
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.data.loader
+>DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) DBT_DUCKDB_PATH=$(DUCKDB_PATH) $(POETRY) run dbt run --project-dir dbt_project
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.data.splitter
+>test -f "$@"
+
+dbt-run:
+>DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) DBT_DUCKDB_PATH=$(DUCKDB_PATH) $(POETRY) run dbt run --project-dir dbt_project
+
+dbt-test:
+>DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) DBT_DUCKDB_PATH=$(DUCKDB_PATH) $(POETRY) run dbt test --project-dir dbt_project
