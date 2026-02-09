@@ -102,6 +102,9 @@ if SERVING_BACKEND not in ("xgboost", "catboost", "bert"):
         f"Expected one of: xgboost, catboost, bert"
     )
 
+# API configuration
+API_CONTRACT_VERSION = "1.0.0"
+
 INFERENCE_BACKENDS = ("catboost", "xgboost", "bert")
 MULTI_CLASSIFIER_ORDER = ("category", "priority", "sentiment")
 

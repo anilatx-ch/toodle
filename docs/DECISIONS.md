@@ -278,8 +278,34 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Status:** Implemented
 
-### Stage 6: API Layer
-Decisions for API design, deployment strategy will be added here.
+---
+
+#### D-019: Placeholder Fields in API Response
+
+**Decision:** Return priority and sentiment as deterministic placeholders with null confidence values and explicit warning flags in /predict endpoint.
+
+**Rationale:** API contract demonstrates intended multi-output design while real models are not yet trained. Clients can integrate now and receive real predictions when models are deployed. Explicit `priority_placeholder` and `sentiment_placeholder` warning flags make status unambiguous. Real sentiment available via /analyze-feedback endpoint.
+
+**Trade-off:** Slightly confusing API (why return fields that aren't real?), but demonstrates extensible design and allows early client integration.
+
+**Status:** Implemented
+
+---
+
+#### D-020: Single-Backend Serving Strategy
+
+**Decision:** Serve predictions from one configured backend (CatBoost, XGBoost, or BERT) rather than ensemble voting.
+
+**Rationale:** For this assessment scope, single-backend simplicity outweighs ensemble complexity. All three models achieve >85% F1 on clean data. Production systems could add ensemble logic later. Configuration via `SERVING_BACKEND` environment variable enables easy switching.
+
+**Trade-off:** No ensemble reliability benefit (variance reduction, failure resilience). Single model may miss edge cases caught by others. Acceptable for demo scope.
+
+**Status:** Implemented
+
+---
+
+### Stage 7: Documentation & Verification
+Final polish decisions will be added here.
 
 ---
 

@@ -583,7 +583,68 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 
 ---
 
+### [7] API Layer (Stage 6)
+
+**Purpose:** Serve predictions, sentiment analysis, and search via FastAPI REST endpoints.
+
+**Core modules:**
+- `src/api/app.py` - FastAPI application with /predict, /analyze-feedback, /health
+- `src/api/schemas.py` - Pydantic request/response models
+- `src/api/search.py` - /search endpoint router
+
+**Endpoints:**
+
+1. **POST /predict**
+   - Input: TicketInputMultiClassifier (subject, description, metadata)
+   - Output: predicted category (real), priority + sentiment (placeholders)
+   - Backend: configurable (CatBoost, XGBoost, or BERT via `SERVING_BACKEND`)
+   - Warning flags: `priority_placeholder`, `sentiment_placeholder`, `low_confidence`, `confidence_anomaly`, `possible_leakage_pattern`
+
+2. **POST /analyze-feedback**
+   - Input: ticket_id + feedback_text
+   - Output: real sentiment prediction (CatBoost)
+   - Used for post-resolution customer feedback analysis
+
+3. **POST /search**
+   - Input: query + optional filters (category, product, resolution_code)
+   - Output: top-k similar historical resolutions
+   - Backend: SearchEngine (FAISS + entity matching)
+
+4. **GET /health**
+   - Returns: backend readiness, anomaly detector status, search index status
+
+**ModelManager:**
+- Loads category models (CatBoost, XGBoost, BERT) at startup
+- Loads sentiment model (CatBoost)
+- Loads feature pipelines
+- Loads anomaly detector baseline
+- Validates backend readiness before serving requests
+
+**Prediction flow:**
+1. Validate request schema (Pydantic)
+2. Convert to DataFrame
+3. Check for leakage patterns in text
+4. Transform via FeaturePipeline (TF-IDF + tabular features)
+5. Predict with backend model
+6. Normalize probability distribution
+7. Check confidence threshold
+8. Check anomaly detector (if loaded)
+9. Return response with warnings
+
+**Artifacts:**
+- Contract version: 1.0.0
+- Default backend: XGBoost
+- Confidence threshold: 0.5
+- Serving port: 8000
+
+**Operational targets:**
+- `make api` - start dev server with auto-reload
+- `make docker-build` - build Docker image
+- `make docker-up` - start containerized API
+
+---
+
 ## Future Stages (Planned)
 
-### Stage 6: API Layer
-[To be documented during Stage 6]
+### Stage 7: Documentation & Verification
+Final polish, verification, and deployment preparation.

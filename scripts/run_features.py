@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -16,6 +17,15 @@ from src.features.pipeline import FeaturePipeline
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Build feature pipeline")
+    parser.add_argument(
+        "--classifier",
+        choices=["category", "priority", "sentiment"],
+        default="category",
+        help="Classifier type",
+    )
+    args = parser.parse_args()
+
     config.ensure_directories()
     df = pd.read_parquet(config.CLEAN_TRAINING_PARQUET_PATH)
 
@@ -26,19 +36,22 @@ def main() -> int:
         train_df = train_df.head(config.TRAIN_SAMPLES)
         val_df = val_df.head(config.VAL_SAMPLES)
 
-    pipeline = FeaturePipeline.create_for_classifier("category")
+    pipeline = FeaturePipeline.create_for_classifier(args.classifier)
     pipeline.fit(train_df)
 
     X_train, y_train = pipeline.get_catboost_features(train_df)
     X_val, y_val = pipeline.get_catboost_features(val_df)
 
-    pipeline.save(config.FEATURE_PIPELINE_PATHS["category"])
-    pipeline.tfidf.save(config.TFIDF_VECTORIZER_PATH)
+    pipeline.save(config.FEATURE_PIPELINE_PATHS[args.classifier])
 
-    print(f"train shape={X_train.shape}, val shape={X_val.shape}")
-    print(f"label classes={len(pipeline.label_encoder.classes_)}")
-    print(f"train labels shape={y_train.shape}, val labels shape={y_val.shape}")
-    print("Saved feature artifacts in models/")
+    # Save TFIDF vectorizer only for category (shared across classifiers)
+    if args.classifier == "category":
+        pipeline.tfidf.save(config.TFIDF_VECTORIZER_PATH)
+
+    print(f"[{args.classifier}] train shape={X_train.shape}, val shape={X_val.shape}")
+    print(f"[{args.classifier}] label classes={len(pipeline.label_encoder.classes_)}")
+    print(f"[{args.classifier}] train labels shape={y_train.shape}, val labels shape={y_val.shape}")
+    print(f"Saved {args.classifier} feature pipeline to {config.FEATURE_PIPELINE_PATHS[args.classifier]}")
     return 0
 
 

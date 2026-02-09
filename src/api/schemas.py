@@ -1,12 +1,15 @@
+"""API request and response schemas."""
+
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, Optional
 
-MULTI_CLASSIFIER_CONTRACT_VERSION = "3.1.0"
+from pydantic import BaseModel, Field
 
 
 class TicketInput(BaseModel):
+    """Legacy ticket input schema (for backward compatibility in preprocessing)."""
+
     ticket_id: str
     subject: str
     description: str
@@ -27,19 +30,6 @@ class TicketInput(BaseModel):
     product_version_age_days: int
     attachments_count: int
     created_at: str = Field(description="ISO-8601 timestamp")
-
-
-class PredictionResponse(BaseModel):
-    ticket_id: str
-    subcategory: str
-    category: str
-    subcategory_confidence: float
-    category_confidence: float
-    subcategory_probabilities: Dict[str, float]
-    category_probabilities: Dict[str, float]
-    warning: Optional[str] = None
-    model_used: str
-    inference_time_ms: float
 
 
 class TicketInputMultiClassifier(BaseModel):
@@ -70,15 +60,18 @@ class MultiClassifierPredictionResponse(BaseModel):
     predicted_priority: str
     predicted_sentiment: str
     category_confidence: float
-    priority_confidence: float
-    sentiment_confidence: float
+    priority_confidence: Optional[float] = Field(
+        None, description="Null for placeholder priority predictions"
+    )
+    sentiment_confidence: Optional[float] = Field(
+        None, description="Null for placeholder sentiment predictions"
+    )
     category_probabilities: Dict[str, float]
     priority_probabilities: Dict[str, float]
     sentiment_probabilities: Dict[str, float]
     warning: Optional[str] = None
     model_used: str
     inference_time_ms: float
-    contract_version: str = MULTI_CLASSIFIER_CONTRACT_VERSION
 
 
 class ErrorResponse(BaseModel):

@@ -107,13 +107,12 @@ def main() -> int:
     """Run evaluation pipeline."""
     parser = argparse.ArgumentParser(description="Run evaluation")
     parser.add_argument("--model", choices=["catboost", "xgboost", "bert", "all"], default="all")
-    parser.add_argument("--classifier", choices=["category", "sentiment"], default="category")
     parser.add_argument("--latency-only", action="store_true")
     args = parser.parse_args()
 
     config.ensure_directories()
-    pipeline = FeaturePipeline.load(config.FEATURE_PIPELINE_PATHS[args.classifier])
-    df = pd.read_parquet(config.SPLIT_PARQUET_PATH)
+    pipeline = FeaturePipeline.load(config.FEATURE_PIPELINE_PATH)
+    df = pd.read_parquet(config.CLEAN_TRAINING_PARQUET_PATH)
     test_df = df[df["split"] == "test"].copy().reset_index(drop=True)
 
     if config.SMOKE_TEST:
@@ -123,18 +122,12 @@ def main() -> int:
     evaluation_payload = {}
     evaluation_artifacts = []
 
-    # Determine output path based on classifier
-    if args.classifier == "sentiment":
-        output_path = config.METRICS_DIR / "sentiment_evaluation_summary.json"
-    else:
-        output_path = config.EVALUATION_SUMMARY_PATH
-
     # CatBoost evaluation
     if args.model in ["catboost", "all"] and not args.latency_only:
         try:
             from src.models.catboost_model import CatBoostTicketClassifier
 
-            catboost_model = CatBoostTicketClassifier.load(config.CATBOOST_MODEL_PATHS[args.classifier])
+            catboost_model = CatBoostTicketClassifier.load(config.CATBOOST_MODEL_PATH)
             catboost_model.label_classes = class_names
             X_test, y_test = pipeline.get_catboost_features(test_df)
             y_pred_cat = catboost_model.predict_label_ids(X_test)
@@ -183,7 +176,7 @@ def main() -> int:
         try:
             from src.models.xgboost_model import XGBoostTicketClassifier
 
-            xgboost_model = XGBoostTicketClassifier.load(config.XGBOOST_MODEL_PATHS[args.classifier])
+            xgboost_model = XGBoostTicketClassifier.load(config.XGBOOST_MODEL_PATH)
             xgboost_model.label_classes = class_names
             X_test, y_test = pipeline.get_catboost_features(test_df)
             y_pred_xgb = xgboost_model.predict_label_ids(X_test)
@@ -221,7 +214,7 @@ def main() -> int:
         try:
             from src.models.bert_model import BertClassifier
 
-            bert_model = BertClassifier.load(config.BERT_MODEL_DIRS[args.classifier])
+            bert_model = BertClassifier.load(config.BERT_MODEL_DIR)
             bert_model.label_classes = class_names
             test_texts, test_tabular, y_test = pipeline.get_bert_features(test_df)
             y_proba_bert = bert_model.predict_proba(test_texts, test_tabular)
@@ -252,7 +245,7 @@ def main() -> int:
 
     # Save evaluation summary
     if evaluation_payload:
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(config.EVALUATION_SUMMARY_PATH, "w", encoding="utf-8") as f:
             json.dump(evaluation_payload, f, indent=2)
 
         with mlflow_utils.start_run("evaluation-test-metrics"):
@@ -268,7 +261,7 @@ def main() -> int:
                 ]:
                     if metric_name in vals:
                         mlflow_utils.log_metric(f"test_{model_name}_{metric_name}", float(vals[metric_name]))
-            mlflow_utils.log_artifact(str(output_path))
+            mlflow_utils.log_artifact(str(config.EVALUATION_SUMMARY_PATH))
             for artifact in evaluation_artifacts:
                 if artifact.exists():
                     mlflow_utils.log_artifact(str(artifact))

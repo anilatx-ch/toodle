@@ -125,7 +125,7 @@ def _run_optuna(
     return summary
 
 
-def train_xgboost_model(*, enable_optuna: bool | None = None) -> dict[str, Any]:
+def train_xgboost_model(*, enable_optuna: bool | None = None, classifier: str = "category") -> dict[str, Any]:
     """Train XGBoost model and return training summary payload."""
     config.ensure_directories()
 
@@ -137,8 +137,13 @@ def train_xgboost_model(*, enable_optuna: bool | None = None) -> dict[str, Any]:
         train_df = _sample_if_needed(train_df, config.TRAIN_SAMPLES)
         val_df = _sample_if_needed(val_df, config.VAL_SAMPLES)
 
-    pipeline = FeaturePipeline.create_for_classifier("category")
-    pipeline.fit(train_df)
+    # Load or create pipeline for the specified classifier
+    pipeline_path = config.FEATURE_PIPELINE_PATHS[classifier]
+    if pipeline_path.exists():
+        pipeline = FeaturePipeline.load(pipeline_path)
+    else:
+        pipeline = FeaturePipeline.create_for_classifier(classifier)
+        pipeline.fit(train_df)
 
     X_train, y_train = pipeline.get_catboost_features(train_df)
     X_val, y_val = pipeline.get_catboost_features(val_df)
@@ -164,9 +169,10 @@ def train_xgboost_model(*, enable_optuna: bool | None = None) -> dict[str, Any]:
         n_iter=20 if config.SMOKE_TEST else 200,
     )
 
-    pipeline.save(config.FEATURE_PIPELINE_PATHS["category"])
-    pipeline.tfidf.save(config.TFIDF_VECTORIZER_PATH)
-    model.save(config.XGBOOST_MODEL_PATH)
+    pipeline.save(config.FEATURE_PIPELINE_PATHS[classifier])
+    if classifier == "category":
+        pipeline.tfidf.save(config.TFIDF_VECTORIZER_PATH)
+    model.save(config.XGBOOST_MODEL_PATHS[classifier])
 
     per_class_df = metrics["per_class_metrics"]
     per_class_path = _per_class_path()
@@ -193,8 +199,8 @@ def train_xgboost_model(*, enable_optuna: bool | None = None) -> dict[str, Any]:
         },
         "latency": latency,
         "artifacts": {
-            "model": str(config.XGBOOST_MODEL_PATH),
-            "feature_pipeline": str(config.FEATURE_PIPELINE_PATHS["category"]),
+            "model": str(config.XGBOOST_MODEL_PATHS[classifier]),
+            "feature_pipeline": str(config.FEATURE_PIPELINE_PATHS[classifier]),
             "per_class_metrics": str(per_class_path),
         },
     }
@@ -242,7 +248,8 @@ def train_xgboost_model(*, enable_optuna: bool | None = None) -> dict[str, Any]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Train XGBoost category classifier")
+    parser = argparse.ArgumentParser(description="Train XGBoost classifier")
+    parser.add_argument("--classifier", choices=["category", "priority", "sentiment"], default="category")
     parser.add_argument("--optuna", action="store_true", help="Enable Optuna tuning")
     parser.add_argument("--no-optuna", action="store_true", help="Disable Optuna tuning")
     args = parser.parse_args(argv)
@@ -253,7 +260,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.no_optuna:
         use_optuna = False
 
-    summary = train_xgboost_model(enable_optuna=use_optuna)
+    summary = train_xgboost_model(enable_optuna=use_optuna, classifier=args.classifier)
     print(
         "XGBoost training complete: "
         f"f1_weighted={summary['metrics']['f1_weighted']:.4f}, "

@@ -126,8 +126,9 @@ def train(
     parquet_path: Path,
     model_dir: Path,
     summary_path: Path,
+    classifier: str = "category",
 ) -> dict[str, object]:
-    """Train BERT category classifier and return summary payload."""
+    """Train BERT classifier and return summary payload."""
     _require_runtime()
     config.ensure_directories()
 
@@ -139,18 +140,20 @@ def train(
     val_texts = _compose_text(val_df)
     test_texts = _compose_text(test_df)
 
+    # Get labels based on classifier type
+    label_column = "customer_sentiment" if classifier == "sentiment" else classifier
     label_encoder = LabelEncoder()
-    train_y = label_encoder.fit_transform(train_df["category"].astype(str))
-    val_y = label_encoder.transform(val_df["category"].astype(str))
-    test_y = label_encoder.transform(test_df["category"].astype(str))
+    train_y = label_encoder.fit_transform(train_df[label_column].astype(str))
+    val_y = label_encoder.transform(val_df[label_column].astype(str))
+    test_y = label_encoder.transform(test_df[label_column].astype(str))
     label_names = label_encoder.classes_.tolist()
 
     train_tabular = np.zeros((len(train_texts), 0), dtype=np.float32)
     val_tabular = np.zeros((len(val_texts), 0), dtype=np.float32)
     test_tabular = np.zeros((len(test_texts), 0), dtype=np.float32)
 
-    classifier = BertClassifier(classifier="category", label_classes=label_names)
-    model = classifier.build_model(n_tabular_features=0, n_classes=len(label_names))
+    bert_classifier = BertClassifier(classifier=classifier, label_classes=label_names)
+    model = bert_classifier.build_model(n_tabular_features=0, n_classes=len(label_names))
 
     train_ds = _make_dataset(
         train_texts,
@@ -187,10 +190,10 @@ def train(
         )
         train_seconds = float(time.perf_counter() - start)
 
-        classifier.model = model
-        classifier.save(model_dir)
+        bert_classifier.model = model
+        bert_classifier.save(model_dir)
 
-        test_proba = classifier.predict_proba(test_texts, test_tabular)
+        test_proba = bert_classifier.predict_proba(test_texts, test_tabular)
         test_pred = test_proba.argmax(axis=1)
         metrics = compute_all_metrics(test_y, test_pred, test_proba, label_names)
 
@@ -198,7 +201,7 @@ def train(
         per_class.to_csv(config.PER_CLASS_MDEEPL_PATH, index=False)
 
         latency = benchmark_model(
-            lambda: classifier.predict_proba(test_texts[:1], test_tabular[:1]),
+            lambda: bert_classifier.predict_proba(test_texts[:1], test_tabular[:1]),
             n_warmup=3 if config.SMOKE_TEST else 10,
             n_iter=10 if config.SMOKE_TEST else 100,
         )
@@ -274,23 +277,29 @@ def train(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Train DistilBERT category classifier")
+    parser = argparse.ArgumentParser(description="Train DistilBERT classifier")
+    parser.add_argument(
+        "--classifier",
+        choices=["category", "priority", "sentiment"],
+        default="category",
+        help="Classifier type",
+    )
     parser.add_argument(
         "--parquet-path",
         type=Path,
-        default=config.CLEAN_TRAINING_PARQUET_PATH,
+        default=None,
         help="Path to clean training parquet",
     )
     parser.add_argument(
         "--model-dir",
         type=Path,
-        default=config.BERT_MODEL_DIR,
+        default=None,
         help="Output directory for BERT model",
     )
     parser.add_argument(
         "--summary-path",
         type=Path,
-        default=config.MDEEPL_TRAINING_SUMMARY_PATH,
+        default=None,
         help="Output JSON summary path",
     )
     parser.add_argument(
@@ -300,12 +309,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # Set defaults based on classifier
+    if args.parquet_path is None:
+        args.parquet_path = config.CLEAN_TRAINING_PARQUET_PATH
+    if args.model_dir is None:
+        args.model_dir = config.BERT_MODEL_DIRS[args.classifier]
+    if args.summary_path is None:
+        args.summary_path = config.MDEEPL_TRAINING_SUMMARY_PATH
+
     if args.download_only:
         _download_preset()
         print(f"Downloaded preset: {config.BERT_PRESET}")
         return 0
 
-    summary = train(args.parquet_path, args.model_dir, args.summary_path)
+    summary = train(args.parquet_path, args.model_dir, args.summary_path, classifier=args.classifier)
     print(
         "BERT training complete: "
         f"f1_weighted={summary['metrics']['f1_weighted']:.4f}, "

@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 5 (Sentiment, Search & Anomaly) complete
+**Status**: ✅ Stage 6 (API & Integration) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stage 6 (API & Integration)
+**Next**: Stage 7 (Documentation Polish & Final Verification)
 
 ### What's Been Built
 
@@ -49,11 +49,19 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Anomaly modules (`src/anomaly/*`) for confidence and volume analysis
   - Build scripts: `build_search_index.py`, `generate_embeddings.py`, `build_anomaly_baseline.py`
   - Makefile targets: `train-sentiment`, `build-search-index`, `build-anomaly-baseline`
+- **Stage 6**: API & Integration
+  - FastAPI application (`src/api/app.py`) with /predict, /analyze-feedback, /search, /health
+  - Pydantic schemas (`src/api/schemas.py`) with placeholder field support
+  - Search router (`src/api/search.py`)
+  - ModelManager for loading CatBoost + XGBoost + BERT + sentiment models
+  - API tests: 9 tests covering all endpoints
+  - Makefile targets: `api`, `docker-build`, `docker-up`, `docker-down`
+  - Documentation: API_CONTRACT.md, D-019, D-020
 
 ### Current Metrics
 
-- **Source code**: 4600 LOC in `src/` (through Stage 5)
-- **Tests**: 78 passing
+- **Source code**: 5137 LOC in `src/` (through Stage 6)
+- **Tests**: 87 passing
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -138,11 +146,12 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ## Current Validation Status
 
-**Tests**: 78 passing (pytest)
+**Tests**: 87 passing (pytest)
 - Includes Stage 3 model wrapper and training orchestrator coverage
 - Includes Stage 4 additions (`tests/test_bert_model.py`: 5 passing)
 - Includes Stage 4.5 additions (`tests/test_generate_report.py`: 2 passing)
 - Includes Stage 5 additions (`tests/test_search.py`: 5 passing, `tests/test_anomaly.py`: 9 passing)
+- Includes Stage 6 additions (`tests/test_api.py`: 9 passing)
 
 **Smoke mode**: `SMOKE_TEST=true` uses 100-record subset for fast validation
 
@@ -157,8 +166,9 @@ This finding fundamentally changed the training approach and is documented in [d
 
 **Technical Documentation**:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and data flow (living doc)
-- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-018 (living doc)
+- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-020 (living doc)
 - [docs/MODEL.md](docs/MODEL.md) - Model performance and data quality analysis (living doc)
+- [docs/API_CONTRACT.md](docs/API_CONTRACT.md) - API endpoint specifications and examples
 
 **Setup and Usage**:
 - [README.md](README.md) - Quick start, installation, basic usage
@@ -231,13 +241,22 @@ This finding fundamentally changed the training approach and is documented in [d
   - Build scripts added: `scripts/build_search_index.py`, `scripts/generate_embeddings.py`, `scripts/build_anomaly_baseline.py`
   - Tests added: `tests/test_search.py` (5 passing), `tests/test_anomaly.py` (9 passing)
   - Makefile targets added: `train-sentiment`, `build-search-index`, `build-anomaly-baseline`
-  - **Current**: 4600 LOC in `src/`
 
-- ⏳ **Stage 6: API & Integration** (next)
-  - FastAPI endpoints: /predict, /search, /analyze-feedback, /health
-  - ModelManager loading CatBoost + XGBoost + BERT
-  - Confidence-weighted ensemble predictions
-  - Full smoke test pipeline (data → train → serve)
+- ✅ **Stage 6: API & Integration** (complete)
+  - FastAPI application: `src/api/app.py` (421 LOC)
+  - Endpoints: /predict (category + placeholders), /analyze-feedback (sentiment), /search (RAG), /health
+  - Schemas: `src/api/schemas.py` (99 LOC) with placeholder field support
+  - Search router: `src/api/search.py` (120 LOC)
+  - ModelManager: loads 2 trad ML + BERT + sentiment + anomaly detector
+  - Tests: `tests/test_api.py` (9 passing)
+  - Makefile targets: `api`, `docker-build`, `docker-up`, `docker-down`
+  - Documentation: `docs/API_CONTRACT.md`, D-019 (placeholder fields), D-020 (single backend)
+  - **Current**: 5137 LOC in `src/`
+
+- ⏳ **Stage 7: Documentation Polish** (next)
+  - Complete README.md with API examples
+  - System diagram in ARCHITECTURE.md
+  - Final verification: tests, pipeline, Docker, docs
 
 - ⏳ **Stage 7: Documentation Polish**
   - Fill all performance numbers in docs/MODEL.md
@@ -247,4 +266,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stage 5 complete (Feb 9, 2026)
+**Last updated**: Stage 6 complete (Feb 9, 2026)

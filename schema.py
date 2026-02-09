@@ -12,22 +12,18 @@ from src import config
 
 
 def build_schema() -> DataFrameSchema:
-    """Build validation schema for clean training data (before feature engineering).
-
-    Note: ticket_id is not unique because balancing may oversample rows.
-    """
     return DataFrameSchema(
         {
-            "ticket_id": Column(str, nullable=False),
+            "ticket_id": Column(str, unique=True, nullable=False),
             "category": Column(str, nullable=False),
-            "subcategory": Column(str, nullable=False),
-            "subject": Column(str, checks=Check.str_length(1), nullable=False),
-            "description": Column(str, checks=Check.str_length(1), nullable=False),
-            "priority": Column(str, nullable=False),
-            "severity": Column(str, nullable=False),
+            "priority_ordinal": Column(int, checks=Check.isin([0, 1, 2, 3])),
+            "severity_ordinal": Column(int, checks=Check.isin([0, 1, 2, 3, 4])),
             "account_age_days": Column(int, checks=Check.in_range(30, 1000), nullable=False),
             "account_monthly_value": Column(float, checks=Check.ge(0), nullable=False),
             "split": Column(str, checks=Check.isin(["train", "val", "test"]), nullable=False),
+            "text_combined_tfidf": Column(str, checks=Check.str_length(1), nullable=False),
+            "text_combined_bert": Column(str, checks=Check.str_length(1), nullable=False),
+            "has_leakage_pattern": Column(bool, nullable=False),
         },
         coerce=True,
         strict=False,
@@ -48,26 +44,17 @@ def main() -> int:
         default=str(config.CLEAN_TRAINING_PARQUET_PATH),
         help="Input parquet path",
     )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=str(config.SPLIT_PARQUET_PATH),
-        help="Output parquet path for validated data",
-    )
     args = parser.parse_args()
 
     validated = validate_parquet(args.input)
+    leakage_count = int(validated["has_leakage_pattern"].sum())
 
     print(f"Validation passed for {len(validated)} rows")
-
-    # Show split distribution
-    split_counts = validated["split"].value_counts()
-    print(f"Split distribution: {dict(sorted(split_counts.items()))}")
-
-    # Write validated data to output
-    validated.to_parquet(args.output, index=False)
-    print(f"Saved validated data to {args.output}")
-
+    print(
+        "Leakage warning: "
+        f"{leakage_count} rows flagged "
+        f"({100.0 * leakage_count / max(len(validated), 1):.2f}%)"
+    )
     return 0
 
 
