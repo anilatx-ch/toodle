@@ -176,6 +176,32 @@ Each decision entry follows this structure:
 
 ---
 
+### Stage 2.5: Evaluation & Experiment Tracking
+
+#### D-010: Evaluation Metrics
+
+**Decision:** Weighted F1 as primary metric, with per-class precision/recall
+
+**Rationale:** Balanced dataset (~22 per class) makes weighted F1 appropriate. Per-class metrics help identify category-specific issues. Weighted F1 accounts for any minor class imbalances while remaining interpretable.
+
+**Trade-off:** Standard metrics; no custom business-weighted scoring. Simpler approach appropriate for assessment scope.
+
+**Status:** Implemented
+
+---
+
+#### D-011: MLflow Experiment Structure
+
+**Decision:** Single experiment per model type, runs tagged by data version and config hash
+
+**Rationale:** Simple structure for assessment scope. Tags enable filtering without complex experiment hierarchy. Avoids over-engineering while maintaining experiment traceability.
+
+**Trade-off:** Less organization than production MLOps, appropriate for demo. In production, would use nested experiments (model type → hyperparameter search → final model).
+
+**Status:** Implemented
+
+---
+
 ### Stage 3: Traditional ML Models
 Decisions for CatBoost and XGBoost hyperparameters, training strategy will be added here.
 

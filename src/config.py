@@ -133,6 +133,12 @@ BERT_MODEL_DIRS = {
 TFIDF_VECTORIZER_PATH = MODELS_DIR / _env_name("tfidf_vectorizer", ".pkl")
 QUANTIZED_BERT_PATH = MODELS_DIR / _env_name("m3_quantized", ".tflite")
 
+# Shortcuts for category (default) models
+FEATURE_PIPELINE_PATH = FEATURE_PIPELINE_PATHS["category"]
+CATBOOST_MODEL_PATH = CATBOOST_MODEL_PATHS["category"]
+XGBOOST_MODEL_PATH = XGBOOST_MODEL_PATHS["category"]
+BERT_MODEL_DIR = BERT_MODEL_DIRS["category"]
+
 # Metrics and reports paths
 CATBOOST_OPTUNA_SUMMARY_PATH = METRICS_DIR / "catboost_optuna_summary.json"
 XGBOOST_OPTUNA_SUMMARY_PATH = METRICS_DIR / "xgboost_optuna_summary.json"

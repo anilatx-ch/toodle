@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 2 (Feature Engineering) complete
+**Status**: ✅ Stage 2.5 (Evaluation & Experiment Tracking) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stage 3 (Traditional ML Models)
+**Next**: Stages 3 and 4 (can run in parallel)
 
 ### What's Been Built
 
@@ -26,11 +26,17 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Numerical standard scaling
   - Entity extraction (error codes, products, temporal)
   - Classifier-specific feature pipelines
+- **Stage 2.5**: Evaluation & Experiment Tracking Infrastructure
+  - Evaluation metrics (F1, accuracy, precision, recall, ECE)
+  - Error analysis and confusion cluster generation
+  - Latency benchmarking utilities
+  - MLflow logging utilities
+  - Evaluation orchestration script
 
 ### Current Metrics
 
-- **Source code**: ~850 lines in `src/` (was 446 after Stage 1)
-- **Tests**: 42 passing (was 19 after Stage 1)
+- **Source code**: 2104 lines in `src/` (was ~850 after Stage 2)
+- **Tests**: 48 passing (was 42 after Stage 2)
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -133,7 +139,7 @@ This finding fundamentally changed the training approach and is documented in [d
 
 **Technical Documentation**:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and data flow (living doc)
-- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-007 (living doc)
+- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-011 (living doc)
 - [docs/MODEL.md](docs/MODEL.md) - Model performance and data quality analysis (living doc)
 
 **Setup and Usage**:
@@ -164,18 +170,33 @@ This finding fundamentally changed the training approach and is documented in [d
   - Documentation: DECISIONS.md (D-008, D-009), ARCHITECTURE.md (Feature Engineering section)
   - **Current**: ~850 LOC in src/
 
-- ⏳ **Stage 3: Traditional ML Models**
+- ✅ **Stage 2.5: Evaluation & Experiment Tracking** (complete)
+  - Evaluation metrics: F1, accuracy, precision, recall, ECE
+  - Error analysis: confusion clusters, confidence analysis
+  - Latency benchmarking utilities
+  - MLflow logging utilities with fallback handling
+  - Evaluation orchestration (run_evaluation.py)
+  - Tests: 48 passing (6 new tests)
+  - Documentation: DECISIONS.md (D-010, D-011), docs/MODEL.md (initial structure)
+  - **Current**: 2104 LOC in src/
+
+- ⏳ **Stage 3: Traditional ML Models** (can run in parallel with Stage 4)
   - CatBoost and XGBoost training on clean ~110 samples
   - Optuna hyperparameter tuning
   - MLflow experiment tracking
   - Evaluation metrics and latency analysis
   - Expected: >85% F1 on category prediction
 
-- ⏳ **Stage 4: Deep Learning (BERT)**
+- ⏳ **Stage 4: Deep Learning (BERT)** (can run in parallel with Stage 3)
   - DistilBERT fine-tuning on clean ~110 samples
   - Text-only training path (multimodal as option)
   - Model comparison report (BERT vs CatBoost vs XGBoost)
   - Expected: >85% F1, comparison with traditional ML
+
+- ⏳ **Stage 4.5: Model Comparison & Reporting** (requires Stages 3 and 4)
+  - Generate comprehensive comparison across all models
+  - Complete docs/MODEL.md comparison table
+  - Final model recommendation
 
 - ⏳ **Stage 5: Sentiment, Search & Anomaly**
   - Sentiment classifier (CatBoost on feedback text)
@@ -197,4 +218,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stage 1 complete (Feb 9, 2026)
+**Last updated**: Stage 2.5 complete (Feb 9, 2026)
