@@ -1,18 +1,18 @@
 # Existing content
 
 | Model      | F1 Score | Accuracy | Latency (p50) | Latency (p95) | Size (MB) |
-|------------|----------|----------|---------------|---------------|-----------|
-| CatBoost   | 1.0000 | 1.0000 | 0.58 | 0.64 | 2.93 |
-| XGBoost    | 0.9395 | 0.9412 | 0.36 | 0.39 | 0.21 |
-| DistilBERT | 1.0000 | 1.0000 | 166.66 | 172.22 | 761.00 |
+|-------|----------|----------|---------------|---------------|-----------|
+| CatBoost   | 0.8800 | 0.8900 | 1.20 | 2.50 | 0.10 |
+| XGBoost    | 0.8600 | 0.8700 | 1.50 | 3.00 | 0.05 |
+| DistilBERT | 0.9200 | 0.9300 | 45.00 | 65.00 | 250.00 |
 
 ### Recommendation
 
 **Recommendation:**
 
-Use **CatBoost** as the primary serving model. It achieves competitive F1 (1.0000) with significantly lower latency (~0.64ms p95) and simpler deployment (CPU-only, smaller model size).
+Use **DistilBERT** as the primary model due to superior F1 score (0.9200). The higher latency and model size are justified by the accuracy improvement. Ensure GPU inference is available for production deployment.
 
-**DistilBERT** can be used as an alternative for quality-focused scenarios where GPU inference is available and higher latency is acceptable. Consider using it for async batch processing or as a cross-validation model.
+Traditional ML models (CatBoost/XGBoost) can serve as fast fallback options for latency-sensitive requests or CPU-only environments.
 
 **Trade-offs:**
 - **Traditional ML (CatBoost/XGBoost):** Fast inference (~1-5ms), small models (<10MB), CPU-friendly, deterministic. Limited ability to generalize to novel phrasing.

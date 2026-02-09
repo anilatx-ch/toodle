@@ -21,7 +21,8 @@ DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
 .PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
-	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train download-bert train-bert report
+	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train download-bert train-bert report \
+	train-sentiment build-search-index build-anomaly-baseline
 
 install: check-data check-system install-python install-poetry install-deps install-verify
 
@@ -187,3 +188,35 @@ report:
 >@echo "Generating model comparison report..."
 >ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/generate_report.py
 >@echo "✓ Report generation complete. See reports/ and docs/MODEL.md"
+
+# Sentiment, Search & Anomaly (Stage 5)
+
+train-sentiment:
+>@echo "Training sentiment classifier (CatBoost)..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_sentiment
+>@echo "✓ Sentiment training complete."
+
+build-search-index:
+>@echo "Building retrieval search index (FAISS + entity index)..."
+>if [ "$(ENV)" = "dev" ]; then \
+>  CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/build_search_index.py --limit 50; \
+>elif [ "$(ENV)" = "test" ]; then \
+>  CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/build_search_index.py --sample-rate 0.001; \
+>elif [ "$(ENV)" = "prod" ]; then \
+>  echo ""; echo "Running quick 0.1%% sample to estimate prod runtime..."; \
+>  CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/build_search_index.py --sample-rate 0.001 --dry-run; \
+>  echo ""; \
+>  read -p "Proceed with full prod build? [y/N] " confirm; \
+>  if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+>    CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/build_search_index.py; \
+>  else \
+>    echo "Prod build cancelled."; \
+>    exit 1; \
+>  fi; \
+>fi
+>@echo "✓ Search index build complete."
+
+build-anomaly-baseline:
+>@echo "Building anomaly baseline from clean training distribution..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/build_anomaly_baseline.py
+>@echo "✓ Anomaly baseline build complete."

@@ -2,7 +2,7 @@
 
 **Purpose:** Decision log with rationale for architectural and technical choices
 **Status:** Living document - updated each stage
-**Current Stage:** Stages 3 & 4 (Traditional ML + BERT) - Complete
+**Current Stage:** Stage 5 (Sentiment, Search & Anomaly) - Complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -238,8 +238,45 @@ Each decision entry follows this structure:
 
 **Status:** Implemented
 
-### Stage 5: Retrieval & Anomaly Detection
-Decisions for FAISS configuration, anomaly thresholds will be added here.
+### Stage 5: Retrieval, Sentiment & Anomaly Detection
+
+#### D-016: Retrieval Strategy
+
+**Decision:** Use hybrid retrieval with FAISS semantic search + entity keyword boosting.
+
+**Rationale:** Semantic vectors capture intent similarity across ticket phrasing, while entity matching (error codes, product names) improves precision for operational lookups. The combined strategy demonstrates both dense retrieval and structured signal usage in a compact design.
+
+**Trade-off:** Requires index build artifacts (vector index + entity index + corpus snapshot) and introduces an embedding dependency for index generation.
+
+**Status:** Implemented
+
+---
+
+#### D-017: Anomaly Detection Scope
+
+**Decision:** Implement confidence-based per-category anomaly detection and batch volume-distribution shift analysis (JSD + volume delta).
+
+**Rationale:** These two signals cover common failure modes for ticket systems:
+- low-confidence predictions inside a known category
+- sudden category distribution shifts indicating emerging incidents
+
+The approach stays interpretable and lightweight for assessment scope.
+
+**Trade-off:** This does not detect subtle semantic drift directly; it focuses on confidence and volume behavior.
+
+**Status:** Implemented
+
+---
+
+#### D-018: Sentiment Backend Simplification
+
+**Decision:** Use CatBoost only for sentiment classification.
+
+**Rationale:** Sentiment is a secondary classifier in this project. A single traditional backend demonstrates capability without duplicating training code and model artifacts across multiple frameworks.
+
+**Trade-off:** No backend comparison for sentiment specifically, but lower maintenance surface and faster iteration.
+
+**Status:** Implemented
 
 ### Stage 6: API Layer
 Decisions for API design, deployment strategy will be added here.

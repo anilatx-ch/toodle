@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 4.5 (Model Comparison & Reporting) complete
+**Status**: ✅ Stage 5 (Sentiment, Search & Anomaly) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stage 5 (Sentiment, Search & Anomaly)
+**Next**: Stage 6 (API & Integration)
 
 ### What's Been Built
 
@@ -43,11 +43,17 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Clean-data training entrypoint (`src/training/train_bert.py`)
   - Model metadata + weights serialization (`metadata.json` + `model.weights.h5`)
   - Makefile targets: `download-bert`, `train-bert`
+- **Stage 5**: Sentiment, Search & Anomaly
+  - Sentiment classifier training (`src/training/train_sentiment.py`)
+  - Retrieval modules (`src/retrieval/*`) with FAISS + entity index
+  - Anomaly modules (`src/anomaly/*`) for confidence and volume analysis
+  - Build scripts: `build_search_index.py`, `generate_embeddings.py`, `build_anomaly_baseline.py`
+  - Makefile targets: `train-sentiment`, `build-search-index`, `build-anomaly-baseline`
 
 ### Current Metrics
 
-- **Source code**: Combined Stages 3, 4, and 4.5
-- **Tests**: 64 passing (57 from Stage 3 + 5 from Stage 4 + 2 from Stage 4.5)
+- **Source code**: 4600 LOC in `src/` (through Stage 5)
+- **Tests**: 78 passing
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -132,10 +138,11 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ## Current Validation Status
 
-**Tests**: 64 passing (pytest)
+**Tests**: 78 passing (pytest)
 - Includes Stage 3 model wrapper and training orchestrator coverage
 - Includes Stage 4 additions (`tests/test_bert_model.py`: 5 passing)
 - Includes Stage 4.5 additions (`tests/test_generate_report.py`: 2 passing)
+- Includes Stage 5 additions (`tests/test_search.py`: 5 passing, `tests/test_anomaly.py`: 9 passing)
 
 **Smoke mode**: `SMOKE_TEST=true` uses 100-record subset for fast validation
 
@@ -150,7 +157,7 @@ This finding fundamentally changed the training approach and is documented in [d
 
 **Technical Documentation**:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and data flow (living doc)
-- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-013 (living doc)
+- [docs/DECISIONS.md](docs/DECISIONS.md) - Technical decision log D-001 to D-018 (living doc)
 - [docs/MODEL.md](docs/MODEL.md) - Model performance and data quality analysis (living doc)
 
 **Setup and Usage**:
@@ -217,13 +224,16 @@ This finding fundamentally changed the training approach and is documented in [d
   - Makefile target: `report`
   - Documentation: automatically updates docs/MODEL.md comparison section
 
-- ⏳ **Stage 5: Sentiment, Search & Anomaly**
-  - Sentiment classifier (CatBoost on feedback text)
-  - FAISS vector search + entity keyword matching
-  - Volume-based anomaly detection
-  - Build indices and baselines
+- ✅ **Stage 5: Sentiment, Search & Anomaly** (complete)
+  - Sentiment CatBoost training pipeline implemented (`src/training/train_sentiment.py`)
+  - Retrieval stack implemented (`src/retrieval/corpus.py`, `src/retrieval/embeddings.py`, `src/retrieval/index.py`, `src/retrieval/entities.py`, `src/retrieval/search.py`)
+  - Anomaly stack implemented (`src/anomaly/detector.py`, `src/anomaly/baselines.py`, `src/anomaly/volume_analyzer.py`)
+  - Build scripts added: `scripts/build_search_index.py`, `scripts/generate_embeddings.py`, `scripts/build_anomaly_baseline.py`
+  - Tests added: `tests/test_search.py` (5 passing), `tests/test_anomaly.py` (9 passing)
+  - Makefile targets added: `train-sentiment`, `build-search-index`, `build-anomaly-baseline`
+  - **Current**: 4600 LOC in `src/`
 
-- ⏳ **Stage 6: API & Integration**
+- ⏳ **Stage 6: API & Integration** (next)
   - FastAPI endpoints: /predict, /search, /analyze-feedback, /health
   - ModelManager loading CatBoost + XGBoost + BERT
   - Confidence-weighted ensemble predictions
@@ -237,4 +247,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stage 4.5 complete (Feb 9, 2026)
+**Last updated**: Stage 5 complete (Feb 9, 2026)

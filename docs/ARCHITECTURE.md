@@ -2,17 +2,19 @@
 
 **Purpose:** Technical architecture documentation for TOODLE
 **Status:** Living document - updated each stage
-**Current Stage:** Stage 3 (Traditional ML Training) - Complete
+**Current Stage:** Stage 5 (Sentiment, Search & Anomaly) - Complete
 **Last Updated:** 2026-02-09
 
 ---
 
 ## Overview
 
-The core system now includes Stage 1-3 components:
+The core system now includes Stage 1-5 components:
 1. **Full corpus** (100K tickets) → RAG, search, anomaly detection
 2. **Clean training set** (~110 samples) → Category prediction models
 3. **Traditional ML trainers** (CatBoost + XGBoost) with MLflow and evaluation artifacts
+4. **Sentiment classifier** (CatBoost) trained on feedback text
+5. **Retrieval and anomaly modules** for semantic search and issue monitoring
 
 This architecture addresses the data quality challenge: 100K raw tickets contain 30% conflicting labels, while ~110 unique subject templates provide clean, deterministic category mappings.
 
@@ -61,6 +63,15 @@ support_tickets.json (100K records)
                 ├─ CatBoost
                 ├─ XGBoost
                 └─ BERT
+                    ↓
+            [5] Retrieval Index Build (Stage 5)
+                ├─ DistilBERT embeddings
+                ├─ FAISS vector index
+                ├─ Entity inverted index
+                └─ Resolution corpus snapshot
+                    ↓
+            [6] Anomaly Baseline Build (Stage 5)
+                └─ Category volume/confidence baseline
 ```
 
 ---
@@ -223,6 +234,65 @@ df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
 - `make train-catboost`
 - `make train-xgboost`
 - `make train`
+
+---
+
+### [5] Retrieval System (Stage 5)
+
+**Purpose:** Provide hybrid semantic + entity-aware ticket resolution lookup.
+
+**Core modules:**
+- `src/retrieval/corpus.py`
+- `src/retrieval/embeddings.py`
+- `src/retrieval/index.py`
+- `src/retrieval/entities.py`
+- `src/retrieval/search.py`
+- `scripts/generate_embeddings.py`
+- `scripts/build_search_index.py`
+
+**Build flow:**
+1. Load resolved tickets into `ResolutionDocument` objects
+2. Embed source text with DistilBERT CLS vectors
+3. Build FAISS `IndexFlatIP` over normalized vectors
+4. Build entity inverted index for error code/product matches
+5. Persist artifacts under `data/retrieval/`
+
+**Runtime search flow:**
+1. Embed incoming query text
+2. Retrieve top-k semantic neighbors from FAISS
+3. Boost scores using matched entities from query
+4. Apply optional metadata filters (`category`, `product`, `resolution_code`)
+5. Return enriched resolution payloads
+
+**Artifacts:**
+- `data/retrieval/faiss_index_<env>.bin`
+- `data/retrieval/faiss_index_<env>.id_map.json`
+- `data/retrieval/entity_index_<env>.json`
+- `data/retrieval/corpus_<env>.json`
+
+---
+
+### [6] Sentiment + Anomaly (Stage 5)
+
+**Purpose:** Add sentiment capability and monitoring primitives.
+
+**Sentiment training:**
+- `src/training/train_sentiment.py`
+- Uses CatBoost only
+- Input source: `mart_tickets_features` rows with non-empty `feedback_text`
+- Output model: `models/catboost_sentiment_<env>.cbm`
+- Output summary: `metrics/<env>/sentiment_training_summary.json`
+
+**Anomaly modules:**
+- `src/anomaly/detector.py` for per-prediction confidence anomalies
+- `src/anomaly/volume_analyzer.py` for batch distribution/volume shifts
+- `src/anomaly/baselines.py` for baseline creation and persistence
+- `scripts/build_anomaly_baseline.py` to bootstrap baseline from clean training data
+
+**Operational targets:**
+- `make train-sentiment`
+- `make build-search-index`
+- `make build-anomaly-baseline`
 
 ---
 
@@ -515,11 +585,5 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 
 ## Future Stages (Planned)
 
-### Stage 4: Deep Learning (BERT)
-[To be documented]
-
-### Stage 5: Retrieval & Anomaly Detection
-[To be documented]
-
 ### Stage 6: API Layer
-[To be documented]
+[To be documented during Stage 6]
