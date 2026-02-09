@@ -1,5 +1,7 @@
 .RECIPEPREFIX := >
 
+USE_GPU ?= 0
+CUDA_DEVICES ?= $(if $(filter 1,$(USE_GPU)),, "")
 ENV ?= dev
 VALID_ENVS := dev test prod
 ifeq ($(filter $(ENV),$(VALID_ENVS)),)
@@ -184,7 +186,7 @@ download_bert: $(BERT_DOWNLOAD_STAMP)
 
 $(BERT_DOWNLOAD_STAMP): src/config.py
 >mkdir -p "$(@D)"
->env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) BERT_PRESET=$(BERT_PRESET) \
+>env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) BERT_PRESET=$(BERT_PRESET) \
 >  $(POETRY) run python -c "from src import config; import keras_nlp; preset = config.BERT_PRESET; \
 >keras_nlp.models.DistilBertPreprocessor.from_preset(preset, sequence_length=config.BERT_MAX_LEN); \
 >keras_nlp.models.DistilBertBackbone.from_preset(preset); \
@@ -211,7 +213,7 @@ train-bert: $(BERT_MODEL_PATH)
 $(BERT_MODEL_PATH): $(BERT_DOWNLOAD_STAMP) $(SPLIT_PARQUET_PATH) $(FEATURE_PIPELINE_PATH) \
 	src/training/train_bert.py src/models/bert_model.py src/config.py
 >$(TIMEOUT_CMD) $$(($(TRAIN_BERT_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
 >test -f "$@"
 >test -f "$(BERT_METADATA_PATH)"
 >test -f "$(MDEEPL_TRAINING_SUMMARY_PATH)"
@@ -251,7 +253,7 @@ $(XGBOOST_SENTIMENT_PATH): $(SPLIT_PARQUET_PATH) $(FEATURE_PIPELINE_SENTIMENT_PA
 $(BERT_SENTIMENT_PATH): $(BERT_DOWNLOAD_STAMP) $(SPLIT_PARQUET_PATH) $(FEATURE_PIPELINE_SENTIMENT_PATH) \
 	src/training/train_bert.py src/models/bert_model.py src/config.py
 >$(TIMEOUT_CMD) $$(($(TRAIN_BERT_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --classifier sentiment
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --classifier sentiment
 >test -f "$@"
 
 train-all-sentiment: $(CATBOOST_SENTIMENT_PATH) $(XGBOOST_SENTIMENT_PATH) $(BERT_SENTIMENT_PATH)
@@ -262,7 +264,7 @@ $(SENTIMENT_EVALUATION_PATH): $(CATBOOST_SENTIMENT_PATH) $(XGBOOST_SENTIMENT_PAT
 	$(SPLIT_PARQUET_PATH) scripts/run_evaluation.py \
 	src/evaluation/metrics.py src/evaluation/analysis.py src/config.py
 >$(TIMEOUT_CMD) $$(($(EVALUATE_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py --classifier sentiment
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py --classifier sentiment
 >test -f "$@"
 
 # Convergence branch
@@ -274,7 +276,7 @@ $(EVALUATION_SUMMARY_PATH): $(CATBOOST_MODEL_PATH) $(XGBOOST_MODEL_PATH) $(BERT_
 	src/evaluation/metrics.py src/evaluation/analysis.py \
 	src/evaluation/latency.py src/config.py
 >$(TIMEOUT_CMD) $$(($(EVALUATE_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py
 >test -f "$@"
 
 # shap: $(SHAP_MDEEPL_PATH)
@@ -302,7 +304,7 @@ $(LATENCY_JSON_PATH): $(CATBOOST_MODEL_PATH) $(XGBOOST_MODEL_PATH) $(BERT_MODEL_
 	$(SPLIT_PARQUET_PATH) scripts/run_evaluation.py \
 	src/evaluation/latency.py src/config.py
 >$(TIMEOUT_CMD) $$(($(LATENCY_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py --latency-only
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_evaluation.py --latency-only
 >test -f "$@"
 >test -f "$(LATENCY_PLOT_PATH)"
 
@@ -352,12 +354,12 @@ train-sentiment:
 >$(POETRY) run python -m src.training.train_sentiment --backend xgboost
 >$(POETRY) run python -m src.training.train_sentiment --backend catboost
 >$(TIMEOUT_CMD) $$(($(TRAIN_BERT_EXPECTED_MIN) * 60 * $(TIMEOUT_FACTOR)))s \
->  env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --classifier sentiment
+>  env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --classifier sentiment
 >@echo "Sentiment training complete. Check metrics/ and figures/ for results."
 
 # RAG search index target (Phase 2 - not part of 'all')
 build-search-index:
->env CUDA_VISIBLE_DEVICES="" ENV=$(ENV) $(POETRY) run python scripts/build_search_index.py
+>env CUDA_VISIBLE_DEVICES=$(CUDA_DEVICES) ENV=$(ENV) $(POETRY) run python scripts/build_search_index.py
 
 
 # Docker targets for Stage 6

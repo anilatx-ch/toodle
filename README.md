@@ -71,6 +71,29 @@ To install missing packages, run:
 
 **Solution:** Run `make install-system` to install the missing packages, then retry `make install`.
 
+## GPU Usage
+
+By default, all training runs with CUDA **disabled** for compatibility and reproducibility. To enable GPU acceleration, set the `USE_GPU` parameter:
+
+```bash
+# Enable GPU for training (faster DistilBERT training)
+make train-bert USE_GPU=1
+
+# Enable GPU for evaluation (faster BERT inference)
+make evaluate USE_GPU=1
+
+# Enable GPU for sentiment training
+make train-sentiment USE_GPU=1
+```
+
+**Checking GPU Availability:**
+```bash
+# Verify CUDA is accessible
+make cuda-check
+```
+
+**Note:** GPU acceleration primarily benefits DistilBERT training and inference. CatBoost and XGBoost models train on CPU and are not affected by this setting.
+
 ## API Usage
 
 ### Start the API
