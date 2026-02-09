@@ -86,7 +86,7 @@ Predict category for incoming support tickets. Returns category (real model), pr
 - `503`: Model backend not ready
 
 **Notes:**
-- `priority` and `sentiment` are **placeholders** (deterministic defaults)
+- `predicted_priority` and `predicted_sentiment` are **placeholders** (deterministic defaults)
 - `priority_confidence` and `sentiment_confidence` are `null` for placeholders
 - Real category prediction uses configured backend (CatBoost, XGBoost, or BERT)
 - Warning flags indicate: `priority_placeholder`, `sentiment_placeholder`, `low_confidence`, `confidence_anomaly`, `possible_leakage_pattern`
@@ -256,7 +256,7 @@ All error responses follow this format:
 **Backend Selection:**
 Set via `SERVING_BACKEND` environment variable:
 - `xgboost` (default for this project)
-- `xgboost`
+- `catboost`
 - `bert`
 
 **Environment:**

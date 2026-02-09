@@ -38,21 +38,10 @@ The package target includes only these paths:
 
 The package intentionally excludes local/dev/internal artifacts:
 
-- Planning/internal process docs:
-  - `CONTEXT.md`
-  - `PLAN_PORTING.md`
-  - `TASK_PORTING.md`
-  - `AGENTS_PORTING.md`
-  - `CLAUDE.md`
-  - `archive/`
-- Local debugging notes:
-  - `BUGS.md`
-  - `BUGS2.md`
-  - `tools/`
-- Runtime and generated artifacts:
-  - `.git/`, `.venv/`, `.pyenv/`, `.pytest_cache/`, `.idea/`
-  - `data/`, `models/`, `metrics/`, `figures/`, `reports/`, `diagnostics/`, `mlruns/`
-  - `support_tickets.json`
+- Planning/internal process docs: `CONTEXT.md`, `PLAN_PORTING.md`, `TASK_PORTING.md`, `AGENTS_PORTING.md`, `CLAUDE.md`, `archive/`
+- Local debugging notes: `BUGS.md`, `BUGS2.md`, `tools/`
+- Runtime/generated artifacts: `.git/`, `.venv/`, `.pyenv/`, `.pytest_cache/`, `.idea/`, `data/`, `models/`, `metrics/`, `figures/`, `reports/`, `diagnostics/`, `mlruns/`
+- Input data not intended for redistribution: `support_tickets.json`
 
 ## Packaging Command
 
