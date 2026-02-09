@@ -21,7 +21,7 @@ DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
 .PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
-	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train
+	data-pipeline dbt-run dbt-test features evaluate train-catboost train-xgboost train download-bert train-bert
 
 install: check-data check-system install-python install-poetry install-deps install-verify
 
@@ -166,3 +166,15 @@ train:
 >@echo "Running traditional ML training (CatBoost + XGBoost)..."
 >ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_training.py --model all
 >@echo "✓ Traditional ML training complete."
+
+# Deep Learning (Stage 4)
+
+download-bert:
+>@echo "Downloading DistilBERT preset assets..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert --download-only
+>@echo "✓ DistilBERT preset ready"
+
+train-bert: $(CLEAN_TRAINING_PARQUET_PATH)
+>@echo "Training DistilBERT category classifier..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python -m src.training.train_bert
+>@echo "✓ BERT training complete. Artifacts saved to models/ and metrics/"

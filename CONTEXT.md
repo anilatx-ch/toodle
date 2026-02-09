@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 3 (Traditional ML Training) complete
+**Status**: ✅ Stages 3 & 4 (Traditional ML + BERT) complete
 **Latest commit**: [To be created after verification]
-**Next**: Stage 4 (Deep Learning / DistilBERT)
+**Next**: Stage 4.5 (Model Comparison & Reporting)
 
 ### What's Been Built
 
@@ -38,11 +38,16 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Optional Optuna tuning with bounded trial counts for small clean dataset
   - MLflow logging, evaluation summaries, and latency profiling
   - Training orchestration script (`scripts/run_training.py`)
+- **Stage 4**: Deep Learning (BERT)
+  - DistilBERT wrapper with text-only default and optional tabular branch
+  - Clean-data training entrypoint (`src/training/train_bert.py`)
+  - Model metadata + weights serialization (`metadata.json` + `model.weights.h5`)
+  - Makefile targets: `download-bert`, `train-bert`
 
 ### Current Metrics
 
-- **Source code**: 2952 lines in `src/`
-- **Tests**: 57 passing
+- **Source code**: Combined Stage 3 + Stage 4
+- **Tests**: 62 passing (57 from Stage 3 + 5 from Stage 4)
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
 - **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
@@ -127,8 +132,9 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ## Current Validation Status
 
-**Tests**: 57 passing (pytest)
+**Tests**: 62 passing (pytest)
 - Includes Stage 3 model wrapper and training orchestrator coverage
+- Includes Stage 4 additions (`tests/test_bert_model.py`: 5 passing)
 
 **Smoke mode**: `SMOKE_TEST=true` uses 100-record subset for fast validation
 
@@ -194,11 +200,12 @@ This finding fundamentally changed the training approach and is documented in [d
   - Documentation: DECISIONS.md (D-013), ARCHITECTURE.md (Stage 3 training), MODEL.md (traditional ML section)
   - **Current**: 2952 LOC in src/
 
-- ⏳ **Stage 4: Deep Learning (BERT)** (next)
-  - DistilBERT fine-tuning on clean ~110 samples
-  - Text-only training path (multimodal as option)
-  - Model comparison report (BERT vs CatBoost vs XGBoost)
-  - Expected: >85% F1, comparison with traditional ML
+- ✅ **Stage 4: Deep Learning (BERT)** (complete)
+  - DistilBERT wrapper implemented in `src/models/bert_model.py`
+  - Text-only training entrypoint implemented in `src/training/train_bert.py`
+  - Makefile targets added: `download-bert`, `train-bert`
+  - Tests: `tests/test_bert_model.py` (5 passing)
+  - Documentation: DECISIONS.md (D-014, D-015), MODEL.md (BERT section)
 
 - ⏳ **Stage 4.5: Model Comparison & Reporting** (requires Stages 3 and 4)
   - Generate comprehensive comparison across all models
@@ -225,4 +232,4 @@ This finding fundamentally changed the training approach and is documented in [d
 
 ---
 
-**Last updated**: Stage 3 complete (Feb 9, 2026)
+**Last updated**: Stages 3 & 4 complete (Feb 9, 2026)

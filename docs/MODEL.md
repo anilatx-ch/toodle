@@ -1,7 +1,7 @@
 # Model Documentation
 
 **Purpose:** Model performance benchmarks, comparisons, and feature importance
-**Status:** Living document - Stage 3 traditional ML implementation complete
+**Status:** Living document - Stages 3 & 4 implementation complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -14,8 +14,13 @@ Stage 3 adds runnable CatBoost and XGBoost training pipelines on clean split dat
 - standardized evaluation (weighted F1 primary)
 - latency benchmarking and MLflow logging
 
+Stage 4 adds DistilBERT deep learning model with:
+- text-only training path (multimodal as option)
+- clean-data training entrypoint
+- model metadata + weights serialization
+
 This document provides:
-1. **Stage 3 traditional ML model details**
+1. **Stage 3 & 4 model details**
 2. **Performance baselines** (used before full training artifacts are generated)
 3. **Data quality findings** (why clean data approach)
 4. **Error analysis** (predicted failure modes)
@@ -58,9 +63,27 @@ the training interfaces and artifact contract; numeric benchmark values are fill
 
 ---
 
-## Stage 1: Pre-Training Baseline (Current)
+## Stage 4: DistilBERT (Implemented)
 
-This section documents expected model performance based on data quality analysis. Actual training results will be added in Stage 3-4.
+### Deep Learning Model
+
+#### DistilBERT
+- **Architecture:** DistilBERT base (`distil_bert_base_en_uncased`) with a fine-tuned classification head
+- **Input:** Raw ticket text (`subject [SEP] description`) in the default text-only path
+- **Hyperparameters:** `batch_size=16`, `epochs=4`, `patience=2`, `lr=2e-5`, `weight_decay=0.01`
+- **Artifacts:** model weights + metadata at `models/bert_category_<env>/`, metrics at `metrics/<env>/mdeepl_training_summary.json`
+
+### Current Stage 4 Notes
+
+- Stage 4 implementation includes a lean BERT wrapper (`src/models/bert_model.py`) and training entrypoint (`src/training/train_bert.py`)
+- Optional text+tabular fusion branch remains available in the model wrapper
+- Final BERT-vs-traditional metrics table will be completed after Stage 3 training runs are available
+
+---
+
+## Stage 1: Pre-Training Baseline
+
+This section documents expected model performance from data quality analysis.
 
 ---
 
