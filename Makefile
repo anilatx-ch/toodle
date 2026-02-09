@@ -41,7 +41,7 @@ check-system:
 >@echo "Checking for required system packages..."
 >@missing_pkgs=""; \
 >for pkg in build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
->           libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
+>           libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev \
 >           libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1; do \
 >  if ! dpkg-query -W -f='$${Status}' "$$pkg" 2>/dev/null | grep -q "install ok installed"; then \
 >    missing_pkgs="$$missing_pkgs $$pkg"; \
@@ -75,7 +75,7 @@ install-system:
 >sudo apt-get update
 >sudo apt-get install -y \
 >  build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
->  libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
+>  libsqlite3-dev wget curl llvm libncurses-dev xz-utils tk-dev \
 >  libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1 pipx
 >@echo ""
 >@echo "Installing Docker (optional)..."
