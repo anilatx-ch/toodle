@@ -105,195 +105,33 @@ Each stage ends with: tests green, documentation updated, review with user, user
 
 ---
 
-### Stage 0: Scaffold & Config
+### ✅ Stage 0: Scaffold & Config (COMPLETE)
 
-**Goal**: Bootable project skeleton that imports and passes config tests.
+**Status:** Complete - See git history and `docs/DECISIONS.md` (D-001 to D-005) for details
 
-**Create/port**:
-- `pyproject.toml` — cleaned deps (drop LightGBM, consolidate groups)
-- `Makefile` — skeleton with install, data-pipeline, test targets (no training yet)
-- `.gitignore` — from DOODLE, tuned
-- `Dockerfile`, `docker-compose.yml` — cleaned
-- `src/__init__.py`
-- `src/config.py` — **heavily cleaned** (see Scope Decisions above)
-- `tests/test_config.py`
-- `AGENTS.md` — agent instructions for this project
-- `CONTEXT.md` — **NEW: project status and navigation (living document)**
-
-**Key cleanups in config.py**:
-- Remove all subcategory feature configs and paths
-- Remove LightGBM params/paths/search spaces
-- BERT_CLEAN_* params become the standard BERT_* params (rename, remove duplicate block)
-- Remove backward-compatible aliases (FEATURE_PIPELINE_PATH, CATBOOST_MODEL_PATH, etc.)
-- Keep priority in MULTI_CLASSIFIER_ORDER (as placeholder target)
-- Collapse IS_INFRA_DEV/SMOKE_TEST triple-branch into cleaner 2-level
-- Remove SUBCATEGORY_CLASSES
-- Add CLEAN_TRAINING_PARQUET_PATH for deduplicated training data
-- Slim down ensure_directories (just create what's needed)
-
-**Tests**: config imports, ENV handling, paths resolve
-
-#### Documentation Deliverables (Stage 0)
-
-**Create `docs/DECISIONS.md`** with initial entries:
-
-```markdown
-# Technical Decisions Log
-
-## D-001: Traditional ML Framework Selection
-**Decision**: CatBoost + XGBoost (drop LightGBM)
-**Rationale**: Two gradient boosting implementations suffice to demonstrate comparison skills. LightGBM adds marginal value while increasing maintenance surface. CatBoost offers native categorical handling; XGBoost is industry standard.
-**Trade-off**: Less framework breadth vs cleaner codebase.
-
-## D-002: Deep Learning Framework
-**Decision**: DistilBERT via keras-nlp on TensorFlow
-**Rationale**: Assessment specifies "TensorFlow/Keras". DistilBERT balances accuracy with inference speed for a demo system.
-**Trade-off**: Heavier dependency than sklearn, but demonstrates transformer competency.
-
-## D-003: Data Pipeline Stack
-**Decision**: dbt + DuckDB (in-process)
-**Rationale**: Job spec values dbt experience. DuckDB avoids external database dependency while supporting SQL transforms. Demonstrates data engineering without infrastructure overhead.
-**Trade-off**: Not production-scale, but appropriate for assessment scope.
-
-## D-004: Experiment Tracking
-**Decision**: MLflow local tracking
-**Rationale**: Job spec explicitly lists MLflow. Local file store avoids server dependency.
-**Trade-off**: No remote collaboration features, acceptable for single-developer demo.
-
-## D-005: Environment Simplification
-**Decision**: SMOKE_TEST boolean + single ENV variable
-**Rationale**: Original 3-tier (dev/test/prod) added complexity without value in assessment context. SMOKE_TEST controls data size; ENV controls path namespacing.
-**Trade-off**: Less production-realistic, but cleaner for demo purposes.
-```
-
-**Create `README.md`** (minimal, to be expanded):
-
-```markdown
-# TOODLE - Intelligent Support Ticket System
-
-Technical assessment demonstrating ML pipeline, NLP classification, and production API design.
-
-## Quick Start
-```bash
-make install
-make all SMOKE_TEST=true  # Full pipeline in smoke mode
-make api                   # Start API server
-```
-
-## Project Status
-Stage 0 complete. See docs/DECISIONS.md for technology choices.
-
-## Documentation
-- [Technical Decisions](docs/DECISIONS.md)
-```
-
-**Create `CONTEXT.md`** (project status and navigation):
-- Initial status: Stage 0 in progress
-- Overview of TOODLE scope and objectives
-- Technology stack list
-- Stage progress tracker (all stages marked as ⏳)
-- Quick navigation links to other docs
-
-**Update CONTEXT.md at end of stage**:
-- Mark Stage 0 as ✅ complete
-- Update "Current Stage" to indicate next is Stage 1
+**Deliverables:**
+- Project skeleton (pyproject.toml, Makefile, Docker, config.py)
+- Infrastructure configuration (paths, environment handling)
+- Initial documentation structure (README.md, docs/DECISIONS.md)
+- 9 tests passing
 
 ---
 
-### Stage 1: Data Pipeline
+### ✅ Stage 1: Data Pipeline (COMPLETE)
 
-**Goal**: JSON → DuckDB → dbt → deduplicated clean training parquet + full corpus, validated.
+**Status:** Complete - See git history, `docs/ARCHITECTURE.md`, and `docs/DECISIONS.md` (D-006, D-007) for details
 
-The pipeline has TWO output paths:
-1. **Full corpus** (100K records via dbt) — used for RAG/search, embeddings, anomaly baselines
-2. **Clean training set** (~110 deduplicated subject→category pairs, balanced) — used for ALL model training
+**Deliverables:**
+- Dual-output data pipeline (full 100K corpus + clean ~110 training set)
+- dbt transformations (DuckDB → staging → features)
+- Clean subject deduplication and stratified splitting
+- Data quality validation (schema checks, balance verification)
+- 19 tests passing total
 
-**Port (merged/rewritten)**:
-- `src/data/__init__.py`
-- `src/data/loader.py` (~70L, mostly clean — minor tidying)
-- `src/data/splitter.py` — **rewritten** (merge clean_subject_extractor + clean_splitter + stratified split into one module, ~200L)
-- `src/data/schema.py` (~63L, clean)
-- `dbt_project/` — models, profiles, sources (clean, minimal)
-- `src/models/hierarchy.py` (~114L — still needed for derive_category)
-
-**Key design of new splitter.py**:
-- `extract_clean_subjects(df) → df` — deduplicate full dataset to ~110 unique subject→category pairs (logic from clean_subject_extractor.py)
-- `balance_categories(df, target_per_category) → df` — balance to equal representation per category (logic from clean_subject_extractor.py)
-- `stratified_split(df) → df` — 70/15/15 train/val/test with stratification by category
-- `main()` — orchestrates: load full → dbt → extract clean → balance → split → save
-- Drop: template_id, error_code extraction, date_boundary_split, resample_train_set, validate_template_consistency, legacy time-based split
-
-**DO NOT port as separate files**: clean_splitter.py, clean_subject_extractor.py, deterministic_mappings.py, single_feature_power.py (the useful logic from the first two is merged into splitter.py)
-
-**Makefile targets**: `data-pipeline`, `dbt-run`, `dbt-test`
-**Tests**: test_data_pipeline.py (adapted), test_splitter.py (test deduplication, balance, split proportions), test_hierarchy.py
-
-#### Documentation Deliverables (Stage 1)
-
-**Append to `docs/DECISIONS.md`**:
-
-```markdown
-## D-006: Clean Training Data Strategy
-**Decision**: Train all models on ~110 deduplicated subject→category pairs, not noisy 100K
-**Rationale**: Investigation revealed subject→category mapping is deterministic (~110 unique pairs). The 100K dataset has ~30% label noise from the generation process. Training on clean data is the correct approach; noisy training was a data quality bug, not a feature.
-**Trade-off**: Smaller training set, but correct labels. Expected: >85% F1 vs 18% on noisy data.
-**Evidence**: See diagnostics/data_investigation/ for analysis.
-
-## D-007: Dual Output Pipeline
-**Decision**: dbt processes full 100K (for RAG corpus), splitter extracts clean ~110 (for training)
-**Rationale**: Full corpus needed for semantic search and anomaly baselines. Clean subset needed for accurate classification training. Both derive from same source with different purposes.
-**Trade-off**: Two data paths to maintain, but each serves distinct purpose.
-```
-
-**Create `docs/ARCHITECTURE.md`** (initial):
-
-```markdown
-# System Architecture
-
-## Overview
-
-TOODLE is an intelligent support ticket system with three main subsystems:
-1. **Data Pipeline** — ingestion, transformation, and splitting
-2. **ML Models** — classification (category, priority, sentiment)
-3. **Serving Layer** — FastAPI endpoints for prediction and search
-
-## Data Flow
-
-```
-tickets.json (100K)
-       │
-       ▼
-   DuckDB (staging)
-       │
-       ▼
-   dbt transforms
-       │
-       ├──────────────────┐
-       ▼                  ▼
- Full Corpus (100K)   Clean Training (~110)
-       │                  │
-       ▼                  ▼
- RAG/Search Index    ML Model Training
- Anomaly Baselines   (CatBoost, XGBoost, BERT)
-```
-
-## Component Details
-
-### Data Pipeline (Stage 1)
-- **loader.py**: JSON ingestion to DuckDB
-- **splitter.py**: Deduplication, balancing, train/val/test split
-- **dbt_project/**: SQL transformations for corpus preparation
-
-[To be expanded in subsequent stages]
-```
-
-**Update `README.md`**: Add "Data Pipeline" section with basic usage.
-
-**Update `CONTEXT.md`**:
-- Mark Stage 1 as ✅ complete
-- Update "Current Stage" to reflect Stage 2 as next
-- Update test counts (e.g., "19 tests passing")
-- Update source LOC count
+**Key Implementation:**
+- `src/data/` (loader, splitter, schema)
+- `dbt_project/` (models, profiles)
+- `src/models/hierarchy.py` (category derivation)
 
 ---
 
