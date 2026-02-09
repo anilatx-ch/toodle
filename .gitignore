@@ -1,0 +1,43 @@
+# Data
+support_tickets.json
+data/raw/
+data/processed/
+data/embeddings/
+
+# Artifacts
+/models/
+data/
+diagnostics/*
+figures*
+figures/
+metrics/
+metrics/
+mlflow/
+mlruns/
+reports/model_comparison*.md
+reports/sentiment_comparison_*.md
+schemas/api_contract_*.json
+catboost_info/
+
+# dbt runtime outputs
+dbt_project/.user.yml
+dbt_project/logs/
+dbt_project/target/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Build / tooling
+*.csv
+.DS_Store
+.claude/
+.codex-test-*
+.dbt/
+.idea/
+.pyenv/

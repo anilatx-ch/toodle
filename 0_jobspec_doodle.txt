@@ -1,0 +1,33 @@
+jobTitle:Full-Stack AI Engineer
+company:Doodle
+location:Zurich, Zurich, 🇨🇭
+AI Rating:85% - Yes
+AI Description:Full-Stack AI Engineer in Scheduling SaaS
+###############################################
+Doodle is a B2B SaaS platform used by millions of professionals to coordinate meetings and collaboration across teams and companies.
+We are expanding from a scheduling product into a broader productivity and coordination platform, which creates meaningful technical challenges at scale.
+
+We need a Full-Stack AI Engineer who is as comfortable with mathematical modeling and research as they are with deploying production-grade code.
+You will own the entire lifecycle: from choosing the right architecture to building the data pipelines that feed it.
+
+((( What You’ll Do )))
+-Design & Build: Move beyond LLM prompts.
+You will architect end-to-end intelligent systems using the right tool for the job—whether that’s a Gradient Boosted Tree, a Transformer, or a custom CNN.
+-Own the Pipeline: Build and maintain the "plumbing" (Airflow, dbt) and the "orchesteration" (MLflow, ZenML) of our AI products.
+-Research & Experiment: Apply a research-oriented mindset to solve complex problems like multi-hop reasoning, model quantization for edge devices, and advanced retrieval.
+-Evaluate & Refine: Don't just ship it—verify it. You'll build frameworks to detect hallucinations, measure regression, and ensure our models are safe and explainable.
+
+((( What you bring: )))
+We are looking for a practitioner with deep foundations. You should have:
+-Strong ML Fundamentals: Proven experience solving problems with traditional ML (XGBoost, LightGBM) and deep feature engineering.
+-Deep Learning Expertise: Hands-on experience with CNNs, RNNs, or Transformers. You understand what happens inside the model, not just how to call an API.
+-Research Background: A strong plus. You can read a paper and implement the findings.
+-The Full-Stack Mindset: Proficiency in Python and ML frameworks (PyTorch, TensorFlow, Scikit-Learn), plus experience with the modern data stack (SQL, dbt, Airflow).
+
+((( What You Get )))
+-Competitive compensation aligned with experience
+-Flexible working setup
+-Time and budget for learning and development
+-Real ownership over features and technical decisions
+-A collaborative, low ego engineering environment
+-A product used by millions of professionals worldwide
