@@ -132,8 +132,49 @@ Each decision entry follows this structure:
 
 ## Future Stages (Planned)
 
-### Stage 2: Feature Engineering
-Decisions for TF-IDF, embeddings, and feature selection will be added here.
+### Stage 2: Feature Engineering (COMPLETE)
+
+#### D-008: Feature Engineering Approach
+
+**Decision:** TF-IDF for text + one-hot encoding for categoricals + standard scaling for numericals
+
+**Rationale:**
+- Simple, interpretable features work well with gradient boosting (CatBoost/XGBoost)
+- TF-IDF captures term importance without embedding overhead (max_features=10000, chi2 k=5000)
+- Categorical one-hot encoding preserves interpretability for feature importance
+- Standard scaling ensures numeric features on comparable scales
+- Less semantic richness than embeddings, but faster and more debuggable
+- BERT path available for deep learning comparison (Stage 4)
+
+**Trade-offs:**
+- TF-IDF doesn't capture word order or context (acceptable for clean 5-class problem)
+- Fixed vocabulary means unseen words at inference are ignored (mitigated by large vocab)
+
+**Evidence:** Original DOODLE achieved 88% F1 with TF-IDF features on clean data
+
+**Status:** Implemented
+
+---
+
+#### D-009: Feature Pipeline Simplification
+
+**Decision:** Single unified pipeline per classifier (remove multi-classifier factory)
+
+**Rationale:**
+- Original design anticipated batch processing multiple targets (category, priority, sentiment) in parallel
+- With only category as real target in TOODLE (priority/sentiment are placeholders), factory adds complexity without benefit
+- `create_for_classifier(name)` provides explicit classifier selection when needed
+- Simpler to reason about single pipeline lifecycle: create → fit → transform → save
+- YAGNI principle - can add factory back if multi-classifier batch becomes requirement
+
+**Trade-offs:**
+- Less flexibility for future multi-classifier batch processing
+- If priority/sentiment become real, callers create pipelines separately
+- But: Cleaner code now, easier to understand and maintain
+
+**Status:** Implemented
+
+---
 
 ### Stage 3: Traditional ML Models
 Decisions for CatBoost and XGBoost hyperparameters, training strategy will be added here.

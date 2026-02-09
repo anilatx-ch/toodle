@@ -21,7 +21,7 @@ DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
 .PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
-	data-pipeline dbt-run dbt-test
+	data-pipeline dbt-run dbt-test features
 
 install: check-data check-system install-python install-poetry install-deps install-verify
 
@@ -135,3 +135,10 @@ dbt-run:
 
 dbt-test:
 >DBT_PROFILES_DIR=$(DBT_PROFILES_DIR) DBT_DUCKDB_PATH=$(DUCKDB_PATH) $(POETRY) run dbt test --project-dir dbt_project
+
+# Feature Engineering (Stage 2)
+
+features: $(CLEAN_TRAINING_PARQUET_PATH)
+>@echo "Fitting feature pipeline..."
+>ENV=$(ENV) SMOKE_TEST=$(SMOKE_TEST) $(POETRY) run python scripts/run_features.py
+>@echo "✓ Feature pipeline fitted and saved to models/"

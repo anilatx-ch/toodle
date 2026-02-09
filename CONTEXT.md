@@ -8,9 +8,9 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ## Current Stage
 
-**Status**: ✅ Stage 1 (Data Pipeline) complete
-**Latest commit**: `5b2b47a - Complete phase 1` (Feb 9, 2026)
-**Next**: Stage 2 (Feature Engineering)
+**Status**: ✅ Stage 2 (Feature Engineering) complete
+**Latest commit**: [To be created after verification]
+**Next**: Stage 3 (Traditional ML Models)
 
 ### What's Been Built
 
@@ -20,12 +20,19 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
   - Clean training set (~110 deduplicated samples) for model training
   - DuckDB staging and transformation
   - Stratified train/val/test splits
+- **Stage 2**: Feature Engineering
+  - TF-IDF text features with Chi2 selection (10K vocab → 5K features)
+  - Categorical one-hot encoding
+  - Numerical standard scaling
+  - Entity extraction (error codes, products, temporal)
+  - Classifier-specific feature pipelines
 
 ### Current Metrics
 
-- **Source code**: 446 lines in `src/`
-- **Tests**: 19 passing
+- **Source code**: ~850 lines in `src/` (was 446 after Stage 1)
+- **Tests**: 42 passing (was 19 after Stage 1)
 - **Data quality**: Zero label conflicts in clean training set (was 30% in noisy 100K)
+- **Feature dimensions**: ~5056 total (5000 TF-IDF + ~50 categorical + ~6 numerical)
 
 ## Scope Boundaries
 
@@ -148,11 +155,14 @@ This finding fundamentally changed the training approach and is documented in [d
   - Documentation: DECISIONS.md (D-006, D-007), ARCHITECTURE.md (data flow)
   - **Current**: 446 LOC in src/
 
-- 🚧 **Stage 2: Feature Engineering** (next)
-  - TF-IDF text features
-  - Categorical and numerical feature encoding
-  - Feature pipeline with train/val/test transforms
-  - Expected tests: ~24 passing
+- ✅ **Stage 2: Feature Engineering** (complete)
+  - TF-IDF vectorization (10K vocab → 5K Chi2 selected)
+  - Categorical/ordinal encoding, numerical scaling
+  - Entity extraction (error codes, products, temporal)
+  - Classifier-specific pipelines (category, priority, sentiment)
+  - Tests: 42 passing (23 new tests)
+  - Documentation: DECISIONS.md (D-008, D-009), ARCHITECTURE.md (Feature Engineering section)
+  - **Current**: ~850 LOC in src/
 
 - ⏳ **Stage 3: Traditional ML Models**
   - CatBoost and XGBoost training on clean ~110 samples
