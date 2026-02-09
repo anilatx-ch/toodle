@@ -31,6 +31,8 @@ class EntityIndex:
                 self.index.setdefault(code, set()).add(doc.ticket_id)
             if doc.product:
                 self.index.setdefault(doc.product, set()).add(doc.ticket_id)
+            for tag in doc.tags:
+                self.index.setdefault(tag, set()).add(doc.ticket_id)
 
     def lookup(self, entities: set[str]) -> dict[str, int]:
         counts: dict[str, int] = {}

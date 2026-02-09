@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from src import config
@@ -24,6 +24,16 @@ class ResolutionDocument:
     description: str
     error_codes: list[str]
     template_used: str | None
+    related_tickets: list[str] = field(default_factory=list)
+    kb_articles_helpful: list[str] = field(default_factory=list)
+    kb_articles_viewed: list[str] = field(default_factory=list)
+    auto_suggested_solutions: list[str] = field(default_factory=list)
+    auto_suggestion_accepted: bool = False
+    resolution_helpful: bool | None = None
+    agent_actions: list[str] = field(default_factory=list)
+    resolution_time_hours: float | None = None
+    satisfaction_score: int | None = None
+    tags: list[str] = field(default_factory=list)
 
     def source_text(self) -> str:
         """Text used for semantic indexing."""
@@ -40,6 +50,16 @@ class ResolutionDocument:
             "description": self.description,
             "error_codes": self.error_codes,
             "template_used": self.template_used,
+            "related_tickets": self.related_tickets,
+            "kb_articles_helpful": self.kb_articles_helpful,
+            "kb_articles_viewed": self.kb_articles_viewed,
+            "auto_suggested_solutions": self.auto_suggested_solutions,
+            "auto_suggestion_accepted": self.auto_suggestion_accepted,
+            "resolution_helpful": self.resolution_helpful,
+            "agent_actions": self.agent_actions,
+            "resolution_time_hours": self.resolution_time_hours,
+            "satisfaction_score": self.satisfaction_score,
+            "tags": self.tags,
         }
 
     @classmethod
@@ -52,6 +72,15 @@ class ResolutionDocument:
         else:
             error_logs = str(row.get("error_logs") or "")
             error_codes = ERROR_RE.findall(f"{description} {error_logs}")
+
+        def _str_list(key: str) -> list[str]:
+            val = row.get(key)
+            if isinstance(val, list):
+                return [str(v) for v in val if str(v).strip()]
+            return []
+
+        satisfaction = row.get("satisfaction_score")
+        resolution_time = row.get("resolution_time_hours")
 
         return cls(
             ticket_id=str(row.get("ticket_id") or ""),
@@ -71,6 +100,24 @@ class ResolutionDocument:
                     else None
                 )
             ),
+            related_tickets=_str_list("related_tickets"),
+            kb_articles_helpful=_str_list("kb_articles_helpful"),
+            kb_articles_viewed=_str_list("kb_articles_viewed"),
+            auto_suggested_solutions=_str_list("auto_suggested_solutions"),
+            auto_suggestion_accepted=bool(row.get("auto_suggestion_accepted", False)),
+            resolution_helpful=(
+                bool(row["resolution_helpful"])
+                if row.get("resolution_helpful") is not None
+                else None
+            ),
+            agent_actions=_str_list("agent_actions"),
+            resolution_time_hours=(
+                float(resolution_time) if resolution_time is not None else None
+            ),
+            satisfaction_score=(
+                int(satisfaction) if satisfaction is not None else None
+            ),
+            tags=_str_list("tags"),
         )
 
 

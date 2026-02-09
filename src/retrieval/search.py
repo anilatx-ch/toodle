@@ -93,6 +93,17 @@ class SearchEngine:
                     "product": doc.product,
                     "similarity_score": float(score),
                     "matched_entities": matched_entities,
+                    "related_tickets": doc.related_tickets,
+                    "kb_articles_helpful": doc.kb_articles_helpful,
+                    "kb_articles_viewed": doc.kb_articles_viewed,
+                    "auto_suggested_solutions": doc.auto_suggested_solutions,
+                    "auto_suggestion_accepted": doc.auto_suggestion_accepted,
+                    "resolution_helpful": doc.resolution_helpful,
+                    "agent_actions": doc.agent_actions,
+                    "resolution_time_hours": doc.resolution_time_hours,
+                    "satisfaction_score": doc.satisfaction_score,
+                    "template_used": doc.template_used,
+                    "tags": doc.tags,
                 }
             )
 
