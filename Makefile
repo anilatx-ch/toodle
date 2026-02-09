@@ -1,7 +1,7 @@
 .RECIPEPREFIX := >
 
 USE_GPU ?= 0
-CUDA_DEVICES ?= $(if $(filter 1,$(USE_GPU)),, "")
+CUDA_DEVICES ?= $(if $(filter 1,$(USE_GPU)),,)
 ENV ?= dev
 VALID_ENVS := dev test prod
 ifeq ($(filter $(ENV),$(VALID_ENVS)),)
