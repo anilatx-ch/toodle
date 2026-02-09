@@ -118,6 +118,7 @@ Each stage ends with: tests green, documentation updated, review with user, user
 - `src/config.py` — **heavily cleaned** (see Scope Decisions above)
 - `tests/test_config.py`
 - `AGENTS.md` — agent instructions for this project
+- `CONTEXT.md` — **NEW: project status and navigation (living document)**
 
 **Key cleanups in config.py**:
 - Remove all subcategory feature configs and paths
@@ -185,6 +186,17 @@ Stage 0 complete. See docs/DECISIONS.md for technology choices.
 ## Documentation
 - [Technical Decisions](docs/DECISIONS.md)
 ```
+
+**Create `CONTEXT.md`** (project status and navigation):
+- Initial status: Stage 0 in progress
+- Overview of TOODLE scope and objectives
+- Technology stack list
+- Stage progress tracker (all stages marked as ⏳)
+- Quick navigation links to other docs
+
+**Update CONTEXT.md at end of stage**:
+- Mark Stage 0 as ✅ complete
+- Update "Current Stage" to indicate next is Stage 1
 
 ---
 
@@ -277,6 +289,12 @@ tickets.json (100K)
 
 **Update `README.md`**: Add "Data Pipeline" section with basic usage.
 
+**Update `CONTEXT.md`**:
+- Mark Stage 1 as ✅ complete
+- Update "Current Stage" to reflect Stage 2 as next
+- Update test counts (e.g., "19 tests passing")
+- Update source LOC count
+
 ---
 
 ### Stage 2: Feature Engineering
@@ -319,6 +337,11 @@ tickets.json (100K)
 ```
 
 **Update `docs/ARCHITECTURE.md`**: Add Feature Engineering section.
+
+**Update `CONTEXT.md`**:
+- Mark Stage 2 as ✅ complete
+- Update "Current Stage" to reflect Stage 3 as next
+- Update test counts and source LOC count
 
 ---
 
@@ -408,6 +431,11 @@ Predict support ticket category from ticket text and metadata.
 
 **Update `docs/ARCHITECTURE.md`**: Add ML Training section.
 
+**Update `CONTEXT.md`**:
+- Mark Stage 3 as ✅ complete
+- Update "Current Stage" to reflect Stage 4 as next
+- Update test counts, source LOC count, and model performance notes
+
 ---
 
 ### Stage 4: Deep Learning (BERT)
@@ -478,6 +506,11 @@ on clean data with BERT).
 **Trade-off**: Unused multimodal code path, but demonstrates capability if needed.
 ```
 
+**Update `CONTEXT.md`**:
+- Mark Stage 4 as ✅ complete
+- Update "Current Stage" to reflect Stage 5 as next
+- Update test counts, source LOC count, and model comparison results
+
 ---
 
 ### Stage 5: Sentiment, Search & Anomaly
@@ -528,6 +561,11 @@ on clean data with BERT).
 ```
 
 **Update `docs/ARCHITECTURE.md`**: Add Retrieval and Anomaly sections.
+
+**Update `CONTEXT.md`**:
+- Mark Stage 5 as ✅ complete
+- Update "Current Stage" to reflect Stage 6 as next
+- Update test counts and source LOC count
 
 ---
 
@@ -621,6 +659,11 @@ System health check.
 **Update `docs/ARCHITECTURE.md`**: Add API Layer section with endpoint diagram.
 **Update `README.md`**: Add API usage examples.
 
+**Update `CONTEXT.md`**:
+- Mark Stage 6 as ✅ complete
+- Update "Current Stage" to reflect Stage 7 as next (final stage)
+- Update test counts, source LOC count, and API status
+
 ---
 
 ### Stage 7: Documentation Polish & Final Verification
@@ -635,7 +678,12 @@ System health check.
 - `docs/DECISIONS.md` — review for clarity, ensure all major decisions captured
 - `docs/MODEL.md` — fill in all performance numbers from actual training runs
 - `docs/API_CONTRACT.md` — verify examples match actual API behavior
-- `CONTEXT.md` — update for TOODLE scope (ported from DOODLE, adapted)
+- `CONTEXT.md` — **final review: ensure Stage 7 marked complete, all sections accurate**
+
+**Update `CONTEXT.md` at completion**:
+- Mark Stage 7 as ✅ complete
+- Verify all metrics (test counts, source LOC, performance) are up-to-date
+- Confirm all cross-references to other docs are valid
 
 **NOT ported**: FUTURE.md (this is the final version), SKILL_TO_SHOW.md (meta-doc), TODO.md, CODE_FLOW.md (redundant with ARCHITECTURE)
 

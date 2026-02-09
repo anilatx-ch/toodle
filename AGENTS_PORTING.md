@@ -1,5 +1,17 @@
 # Porting Agent Instructions
 
+## Understanding This Project First
+
+**REQUIRED READING:**
+1. **CONTEXT.md** (at project root) — current stage, scope, quick architecture overview
+2. **AGENTS_PORTING.md** (this file) — quality expectations and scope boundaries
+3. **docs/ARCHITECTURE.md** — detailed system architecture (after Stage 1)
+
+**Additional Resources:**
+- **PLAN_PORTING.md** — full 7-stage porting roadmap
+- **docs/DECISIONS.md** — technical decision log (D-001 to D-0XX)
+- **docs/MODEL.md** — model performance and data quality analysis
+
 ## Task Context
 You are helping port code from ../DOODLE to this TOODLE project. Each file is inspected
 and cleaned during porting — this is not a copy operation.
@@ -55,6 +67,52 @@ or maintainability?"**
 - **Clean training data**: ALL models train on ~110 deduplicated subject→category pairs (not noisy 100K)
 - **Full 100K through dbt** — for RAG corpus and data engineering demonstration
 - **SMOKE_TEST boolean** controls sample sizes; ENV controls path namespacing only
+
+## Documentation Protocol
+
+**Living Documents** - These must be kept current as you work:
+
+### CONTEXT.md (Project Status)
+**Update at end of each stage:**
+- Mark completed stage as ✅
+- Update "Current Stage" section
+- Update test counts and source LOC
+- Add any new known issues
+
+**Example update:**
+```diff
+## Current Stage
+- Stage 1 (Data Pipeline) complete
+- Next: Stage 2 (Feature Engineering)
++ Stage 2 (Feature Engineering) complete
++ Next: Stage 3 (Traditional ML Models)
+
+## Current Validation Status
+- 19 tests passing
++ 24 tests passing
+```
+
+### docs/DECISIONS.md (Decision Log)
+**Append new decisions when made** (not retrospectively):
+- Each major design choice gets a D-0XX entry
+- Include rationale and trade-offs
+- Reference from code comments when helpful
+
+### docs/ARCHITECTURE.md (System Architecture)
+**Expand as components are built**:
+- Stage 1: Data flow diagram
+- Stage 2: Feature engineering section
+- Stage 3-4: ML training section
+- Stage 5: Retrieval and anomaly sections
+- Stage 6: API layer diagram
+
+### docs/MODEL.md (Model Performance)
+**Update with actual training results**:
+- Fill performance tables after each training run
+- Document hyperparameters used
+- Update recommendations based on results
+
+**When in doubt:** If you make a significant choice or complete a stage, update the docs before committing.
 
 ## Testing Protocol
 - Each stage must pass `pytest` before commit
