@@ -1,7 +1,7 @@
-# Stage 1 Model Documentation: Data Quality Analysis
+# Model Documentation
 
-**Purpose:** Model performance expectations and data quality investigation findings
-**Status:** PRE-TRAINING (Stage 3-4 will implement models)
+**Purpose:** Model performance benchmarks, comparisons, and feature importance
+**Status:** Living document - Stage 1 (pre-training baseline), training results added in Stage 3-4
 **Last Updated:** 2026-02-09
 
 ---
@@ -15,6 +15,12 @@ This document provides:
 2. **Data quality findings** (why clean data approach)
 3. **Error analysis** (predicted failure modes)
 4. **Experiment tracking** (reproducibility)
+
+---
+
+## Stage 1: Pre-Training Baseline (Current)
+
+This section documents expected model performance based on data quality analysis. Actual training results will be added in Stage 3-4.
 
 ---
 
@@ -490,7 +496,31 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 ## References
 
 - **Data Quality Investigation:** `exploration/subcategory_independence/REPORT.md`
-- **Architecture Documentation:** `docs/STAGE1_ARCHITECTURE.md`
-- **DOODLE Experiments:** `/home/ai_agent/DOODLE/` (reference implementation)
+- **Architecture Documentation:** `docs/ARCHITECTURE.md`
+- **DOODLE Experiments:** Reference implementation (see original project)
 - **Clean Training Data:** `data/processed/clean_training_dev.parquet`
 - **Pipeline Logs:** `logs/data_pipeline_*.log`
+
+---
+
+## Stage 3-4: Actual Model Performance (To Be Added)
+
+### CatBoost Results
+[Metrics, confusion matrix, feature importance - to be added after training]
+
+### XGBoost Results
+[Metrics, confusion matrix, feature importance - to be added after training]
+
+### DistilBERT Results
+[Metrics, confusion matrix, attention analysis - to be added after training]
+
+### Model Comparison Table
+
+| Model | F1 Score | Accuracy | Latency (p50) | Latency (p99) | Size (MB) |
+|-------|----------|----------|---------------|---------------|-----------|
+| CatBoost | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| XGBoost | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+| DistilBERT | [TBD] | [TBD] | [TBD] | [TBD] | [TBD] |
+
+### Recommendation
+[Analysis of which model to use in production and why - to be added after Stage 4]

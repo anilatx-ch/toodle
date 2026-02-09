@@ -1,7 +1,8 @@
-# Stage 1 Architecture: Data Pipeline
+# System Architecture
 
-**Purpose:** Design documentation for Phase 1 data preparation pipeline
-**Status:** IMPLEMENTED
+**Purpose:** Technical architecture documentation for TOODLE
+**Status:** Living document - updated each stage
+**Current Stage:** Stage 1 (Data Pipeline) - Complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -207,7 +208,11 @@ df.to_parquet('data/processed/clean_training_dev.parquet', index=False)
 
 ## Design Decisions
 
+Detailed decision rationale is maintained in [DECISIONS.md](DECISIONS.md). This section provides architectural context for decisions affecting system structure.
+
 ### Decision 1: Dual-Output Pipeline (Full + Clean)
+
+See [D-006](DECISIONS.md#d-006-clean-training-data-strategy) and [D-007](DECISIONS.md#d-007-dual-output-pipeline) for full rationale.
 
 **Context:** 100K dataset has 30% conflicting labels, but ~110 unique templates are clean
 
@@ -472,3 +477,22 @@ val, test = train_test_split(temp, train_size=0.5, stratify=temp['category'])
 - **Splitter Implementation:** `src/data/splitter.py`
 - **Configuration:** `src/config.py`
 - **Orchestration:** `Makefile` (targets: `make data-pipeline`, `make data-inspect`)
+
+---
+
+## Future Stages (Planned)
+
+### Stage 2: Feature Engineering
+[To be documented]
+
+### Stage 3: Traditional ML Models
+[To be documented]
+
+### Stage 4: Deep Learning (BERT)
+[To be documented]
+
+### Stage 5: Retrieval & Anomaly Detection
+[To be documented]
+
+### Stage 6: API Layer
+[To be documented]

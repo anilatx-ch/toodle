@@ -22,11 +22,12 @@ All models train on **clean, deduplicated data** (~110 unique subject→category
 ## Current Stage
 
 ✅ **Stage 0: Scaffold & Config** - Complete
+- See [D-001 to D-005](docs/DECISIONS.md) for configuration decisions
+
 ✅ **Stage 1: Data Pipeline** - Complete
-- Dual-output pipeline: full 100K corpus + clean ~110 training set
-- Clean subject→category extraction and balancing
-- Stratified train/val/test split
-- dbt integration
+- See [Architecture: Data Pipeline](docs/ARCHITECTURE.md) for design
+- See [Model: Pre-Training Baseline](docs/MODEL.md) for expectations
+- See [D-006, D-007](docs/DECISIONS.md) for clean data strategy
 - 19 tests passing
 
 🚧 **Next: Stage 2: Feature Engineering**
@@ -72,13 +73,16 @@ make check-system
 
 ## Documentation
 
-### Project Planning
-- `TASK_PORTING.md` - Porting plan and stages
-- `AGENTS_PORTING.md` - Code quality guidelines
-- `0_OBJECTIVE.md` - Original assessment specification
+### Core Documentation
+- [Technical Decisions](docs/DECISIONS.md) - Decision log with rationale (D-001 to D-007)
+- [System Architecture](docs/ARCHITECTURE.md) - Component design and data flow
+- [Model Documentation](docs/MODEL.md) - Performance analysis and comparisons
 
-### Stage 1: Data Pipeline
-- `docs/STAGE1_ARCHITECTURE.md` - Data pipeline architecture and design decisions
-- `docs/STAGE1_MODEL.md` - Data quality analysis and performance expectations
-- `exploration/subcategory_independence/REPORT.md` - Statistical evidence for scope decisions
-- `exploration/README.md` - Investigation methodology overview
+### Project Planning
+- [Porting Plan](PLAN_PORTING.md) - Multi-stage implementation roadmap
+- [Agent Instructions](AGENTS_PORTING.md) - Code quality guidelines
+- [Original Specification](0_OBJECTIVE.md) - Assessment requirements
+
+### Investigations
+- [Subcategory Independence Analysis](exploration/subcategory_independence/REPORT.md) - Statistical evidence for scope decisions
+- [Exploration Methodology](exploration/README.md) - Investigation approach
