@@ -100,7 +100,7 @@ def _make_recommendation(catboost: dict, xgboost: dict, bert: dict) -> str:
     # All models unavailable
     if not catboost and not xgboost and not bert:
         return (
-            "**Recommendation:** No models have been trained yet. Run `make train` and "
+            "**Recommendation:** No models have been trained yet. Run `make train-tradml` and "
             "`make train-bert` to generate comparison data."
         )
 
@@ -178,73 +178,6 @@ def main() -> int:
 
     comparison_table = _build_comparison_table(catboost, xgboost, bert)
     recommendation = _make_recommendation(catboost, xgboost, bert)
-
-    # Read current MODEL.md to preserve most of it
-    model_doc_path = ROOT / "docs" / "MODEL.md"
-    if model_doc_path.exists():
-        current_content = model_doc_path.read_text(encoding="utf-8")
-
-        # Find the comparison table section and replace it
-        table_marker = "| Model      | F1 Score | Accuracy | Latency (p50) | Latency (p95) | Size (MB) |"
-        if table_marker in current_content:
-            # Split on the table header
-            before_table = current_content.split(table_marker)[0]
-
-            # Find the recommendation section
-            rec_marker = "### Recommendation"
-            if rec_marker in current_content:
-                # Find everything after the table up to recommendation
-                after_table_section = current_content.split(table_marker)[1]
-                after_table = after_table_section.split(rec_marker)[0]
-
-                # Split after_table to get just the old data rows and separator
-                lines = after_table.strip().split("\n")
-                # Skip old table rows (3 data rows), keep everything else
-                remaining_after_table = "\n".join(lines[4:]) if len(lines) > 4 else ""
-
-                # Reconstruct with new data
-                new_content = (
-                    before_table +
-                    table_marker + "\n"
-                    "|------------|----------|----------|---------------|---------------|-----------|" + "\n" +
-                    comparison_table + "\n" +
-                    remaining_after_table + "\n" +
-                    rec_marker + "\n\n" +
-                    recommendation
-                )
-
-                # Find if there's content after recommendation section
-                old_rec_section = current_content.split(rec_marker)[1]
-                # Check if there's a next section (starts with ##)
-                if "\n##" in old_rec_section:
-                    next_section = old_rec_section.split("\n##", 1)[1]
-                    new_content += "\n\n##" + next_section
-            else:
-                # No recommendation section yet, add it
-                new_content = (
-                    before_table +
-                    table_marker + "\n"
-                    "|-------|----------|----------|---------------|---------------|-----------|\n" +
-                    comparison_table + "\n\n"
-                    "### Recommendation\n\n" +
-                    recommendation
-                )
-        else:
-            # Table doesn't exist, append to end
-            new_content = (
-                current_content.rstrip() + "\n\n"
-                "## Model Comparison\n\n"
-                "| Model      | F1 Score | Accuracy | Latency (p50) | Latency (p95) | Size (MB) |\n"
-                "|------------|----------|----------|---------------|---------------|-----------|\n" +
-                comparison_table + "\n\n"
-                "### Recommendation\n\n" +
-                recommendation + "\n"
-            )
-
-        model_doc_path.write_text(new_content, encoding="utf-8")
-        print(f"Updated {model_doc_path}")
-    else:
-        print(f"Warning: {model_doc_path} not found")
 
     # Also write a standalone report
     report_content = f"""# Model Comparison Report ({config.ENV})

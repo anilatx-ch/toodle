@@ -43,6 +43,7 @@ LIGHTGBM_SUMMARY_PATH ?= metrics/$(ENV)/lightgbm_optuna_summary.json
 MDEEPL_TRAINING_SUMMARY_PATH ?= metrics/$(ENV)/mdeepl_training_summary.json
 SPLIT_PARQUET_PATH ?= data/processed/tickets_featured_$(ENV).parquet
 MODEL_COMPARISON_PATH ?= reports/model_comparison_$(ENV).md
+PACKAGE_OUTPUT ?= ../full-stack-ai-solution.zip
 BERT_PRESET ?= distil_bert_base_en_uncased
 EMBEDDINGS_SOURCE ?= preset
 TRADML_BACKEND ?= lightgbm
@@ -66,7 +67,7 @@ LATENCY_EXPECTED_MIN ?= $(if $(filter true,$(SMOKE_TEST)),5,30)
 		dbt-run dbt-test dbt-docs eda features \
 		api docker-build docker-up test report all data-pipeline \
 		train-bert train-catboost train-lightgbm train-tradml train-minimal check-reports-layout \
-		build-anomaly-baseline test-anomaly train-sentiment build-search-index
+		build-anomaly-baseline test-anomaly train-sentiment build-search-index package
 
 install: check-data install-system install-python install-poetry install-deps $(BERT_DOWNLOAD_STAMP) install-verify
 
@@ -361,4 +362,7 @@ train-sentiment:
 docker-down:
 >docker-compose down || docker compose down
 
-.PHONY: docker-down
+package:
+>bash scripts/package_submission.sh "$(PACKAGE_OUTPUT)"
+
+.PHONY: docker-down package

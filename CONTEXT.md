@@ -6,11 +6,6 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 **Goal**: Demonstrate clean design, practical trade-offs, and production thinking within a constrained scope (approximately one working day of development).
 
-## Current Stage
-
-**Status**: ✅ Stage 7 (Documentation Polish & Final Verification) complete
-**Latest commit**: [To be created after user review]
-**Next**: Project complete - ready for assessment submission
 
 ### What's Been Built
 
@@ -82,11 +77,8 @@ TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engin
 
 ### Out of Scope
 
-- LightGBM (3rd traditional ML backend - not needed for comparison)
 - Subcategory classification (deferred - see investigation report)
 - Training on noisy 100K dataset (data quality issue - use clean deduplicated set)
-- Experimental analysis scripts
-- 3-tier environment config (simplified to SMOKE_TEST + ENV)
 
 ### Placeholder Features
 
@@ -112,16 +104,6 @@ See [AGENTS_PORTING.md](AGENTS_PORTING.md) for detailed scope and quality guidel
 
 These are the critical design choices that define the system. See [docs/DECISIONS.md](docs/DECISIONS.md) for full rationale.
 
-**D-006: Clean Training Data Strategy**
-- Train all models on ~110 deduplicated subject→category pairs (not noisy 100K)
-- Rationale: Subject→category mapping is deterministic. The 100K dataset has 30% label noise from generation process.
-- Expected: >85% F1 vs 18% on noisy data
-
-**D-007: Dual Output Pipeline**
-- Full 100K through dbt → RAG corpus, anomaly baselines
-- Clean ~110 through splitter → model training
-- Two data paths, distinct purposes
-
 **D-001: Traditional ML Frameworks**
 - CatBoost + XGBoost (drop LightGBM)
 - Two gradient boosting implementations suffice for comparison
@@ -133,6 +115,16 @@ These are the critical design choices that define the system. See [docs/DECISION
 **D-003: Data Pipeline Stack**
 - dbt + DuckDB (in-process)
 - Demonstrates data engineering without infrastructure overhead
+
+**D-006: Clean Training Data Strategy**
+- Train all models on ~110 deduplicated subject→category pairs (not noisy 100K)
+- Rationale: Subject→category mapping is deterministic. The 100K dataset has 30% label noise from generation process.
+- Expected: >85% F1 vs 18% on noisy data
+
+**D-007: Dual Output Pipeline**
+- Full 100K through dbt → RAG corpus, anomaly baselines
+- Clean ~110 through splitter → model training
+- Two data paths, distinct purposes
 
 ## Data Quality Finding
 
@@ -264,7 +256,3 @@ This finding fundamentally changed the training approach and is documented in [d
   - CONTEXT.md: Updated to reflect Stage 7 completion
   - Verification: 87 tests passing, 5,181 LOC, all docs cross-referenced
   - **Current**: 5,181 LOC in src/
-
----
-
-**Last updated**: Stage 7 complete (Feb 9, 2026)

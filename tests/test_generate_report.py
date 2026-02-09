@@ -1,6 +1,7 @@
 """Tests for report generation script."""
 
 import json
+import sys
 from pathlib import Path
 from unittest import mock
 
@@ -78,18 +79,25 @@ def mock_training_summaries(tmp_path):
     return tmp_path
 
 
-def test_report_generation_with_mock_data(mock_training_summaries, tmp_path):
-    """Test that report generation works with mock data."""
-    import sys
-    from pathlib import Path
-
-    # Add project root to path
+def _import_generate_report():
     root = Path(__file__).parents[1]
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    from scripts import generate_report
 
-    # Mock config paths
+    return generate_report
+
+
+def test_report_generation_with_mock_data(mock_training_summaries, tmp_path):
+    """Generate report and verify docs/MODEL.md is not modified."""
     metrics_dir = mock_training_summaries / "metrics"
+    generate_report = _import_generate_report()
+
+    root = Path(__file__).parents[1]
+    model_doc = root / "docs" / "MODEL.md"
+    model_doc_before = model_doc.read_text(encoding="utf-8")
+    model_doc_mtime_before = model_doc.stat().st_mtime_ns
+
     with mock.patch("src.config.METRICS_DIR", metrics_dir):
         with mock.patch("src.config.MDEEPL_TRAINING_SUMMARY_PATH", metrics_dir / "mdeepl_training_summary.json"):
             with mock.patch("src.config.MODEL_COMPARISON_PATH", tmp_path / "report.md"):
@@ -97,85 +105,54 @@ def test_report_generation_with_mock_data(mock_training_summaries, tmp_path):
                     with mock.patch("src.config.XGBOOST_MODEL_PATH", tmp_path / "xgboost.json"):
                         with mock.patch("src.config.BERT_MODEL_DIR", tmp_path / "bert"):
                             with mock.patch("src.config.ENV", "test"):
-                                # Import after mocking
-                                from scripts import generate_report
+                                (tmp_path / "catboost.cbm").write_bytes(b"x" * 1024 * 100)
+                                (tmp_path / "xgboost.json").write_bytes(b"x" * 1024 * 50)
+                                bert_dir = tmp_path / "bert"
+                                bert_dir.mkdir()
+                                (bert_dir / "model.weights.h5").write_bytes(b"x" * 1024 * 1024 * 250)
 
-                            # Create mock model files
-                            (tmp_path / "catboost.cbm").write_bytes(b"x" * 1024 * 100)  # 100KB
-                            (tmp_path / "xgboost.json").write_bytes(b"x" * 1024 * 50)  # 50KB
-                            bert_dir = tmp_path / "bert"
-                            bert_dir.mkdir()
-                            (bert_dir / "model.weights.h5").write_bytes(b"x" * 1024 * 1024 * 250)  # 250MB
+                                result = generate_report.main()
 
-                            # Create mock MODEL.md
-                            model_doc = root / "docs" / "MODEL.md"
-                            original_content = ""
-                            if model_doc.exists():
-                                original_content = model_doc.read_text(encoding="utf-8")
+    assert result == 0
 
-                            with mock.patch.object(Path, "exists", return_value=True):
-                                with mock.patch.object(
-                                    Path,
-                                    "read_text",
-                                    return_value="# Existing content\n\n"
-                                    "| Model      | F1 Score | Accuracy | Latency (p50) | Latency (p95) | Size (MB) |\n"
-                                    "|------------|----------|----------|---------------|---------------|-----------|",
-                                ):
-                                    result = generate_report.main()
+    report_path = tmp_path / "report.md"
+    assert report_path.exists()
+    report_content = report_path.read_text(encoding="utf-8")
 
-                            # Verify success
-                            assert result == 0
+    assert "Model Comparison Report" in report_content
+    assert "CatBoost" in report_content
+    assert "XGBoost" in report_content
+    assert "DistilBERT" in report_content
+    assert "0.8800" in report_content
+    assert "0.8600" in report_content
+    assert "0.9200" in report_content
+    assert "1.20" in report_content
+    assert "45.00" in report_content
+    assert "0.10" in report_content
+    assert "250.00" in report_content
 
-                            # Verify report was created
-                            report_path = tmp_path / "report.md"
-                            assert report_path.exists()
-
-                            report_content = report_path.read_text(encoding="utf-8")
-
-                            # Verify report contains expected sections
-                            assert "Model Comparison Report" in report_content
-                            assert "CatBoost" in report_content
-                            assert "XGBoost" in report_content
-                            assert "DistilBERT" in report_content
-
-                            # Verify metrics are present
-                            assert "0.8800" in report_content  # CatBoost F1
-                            assert "0.8600" in report_content  # XGBoost F1
-                            assert "0.9200" in report_content  # BERT F1
-
-                            # Verify latencies are present
-                            assert "1.20" in report_content  # CatBoost p50
-                            assert "45.00" in report_content  # BERT p50
-
-                            # Verify sizes are present
-                            assert "0.10" in report_content  # CatBoost size
-                            assert "250.00" in report_content  # BERT size
+    # Regression guard: report generation must not mutate MODEL.md.
+    assert model_doc.read_text(encoding="utf-8") == model_doc_before
+    assert model_doc.stat().st_mtime_ns == model_doc_mtime_before
 
 
-def test_report_with_missing_models():
-    """Test report generation when no models are trained."""
-    import sys
-    from pathlib import Path
+def test_report_with_missing_models(tmp_path):
+    """Report generation should still succeed when model artifacts are missing."""
+    generate_report = _import_generate_report()
+    metrics_dir = tmp_path / "missing_metrics"
+    report_path = tmp_path / "report_missing.md"
 
-    root = Path(__file__).parents[1]
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
-
-    metrics_dir = Path("/nonexistent/metrics")
     with mock.patch("src.config.METRICS_DIR", metrics_dir):
         with mock.patch("src.config.MDEEPL_TRAINING_SUMMARY_PATH", metrics_dir / "mdeepl_training_summary.json"):
-            with mock.patch("src.config.MODEL_COMPARISON_PATH", Path("/tmp/report.md")):
-                with mock.patch("src.config.CATBOOST_MODEL_PATH", Path("/nonexistent/model.cbm")):
-                    with mock.patch("src.config.XGBOOST_MODEL_PATH", Path("/nonexistent/model.json")):
-                        with mock.patch("src.config.BERT_MODEL_DIR", Path("/nonexistent/bert")):
+            with mock.patch("src.config.MODEL_COMPARISON_PATH", report_path):
+                with mock.patch("src.config.CATBOOST_MODEL_PATH", tmp_path / "missing_catboost.cbm"):
+                    with mock.patch("src.config.XGBOOST_MODEL_PATH", tmp_path / "missing_xgboost.json"):
+                        with mock.patch("src.config.BERT_MODEL_DIR", tmp_path / "missing_bert_dir"):
                             with mock.patch("src.config.ENV", "test"):
-                                from scripts import generate_report
+                                result = generate_report.main()
 
-                            # Mock Path operations
-                            with mock.patch.object(Path, "exists", return_value=False):
-                                with mock.patch.object(Path, "mkdir"):
-                                    with mock.patch.object(Path, "write_text"):
-                                        result = generate_report.main()
-
-                            # Should succeed even with no models
-                            assert result == 0
+    assert result == 0
+    assert report_path.exists()
+    report_content = report_path.read_text(encoding="utf-8")
+    assert "No models have been trained yet" in report_content
+    assert "make train-tradml" in report_content

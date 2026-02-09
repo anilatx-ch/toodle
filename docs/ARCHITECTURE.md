@@ -2,7 +2,6 @@
 
 **Purpose:** Technical architecture documentation for TOODLE
 **Status:** Living document - updated each stage
-**Current Stage:** Stage 5 (Sentiment, Search & Anomaly) - Complete
 **Last Updated:** 2026-02-09
 
 ---

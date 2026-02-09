@@ -1,8 +1,6 @@
 # Technical Decisions Log
 
 **Purpose:** Decision log with rationale for architectural and technical choices
-**Status:** Living document - updated each stage
-**Current Stage:** Stage 5 (Sentiment, Search & Anomaly) - Complete
 **Last Updated:** 2026-02-09
 
 ---
@@ -15,7 +13,6 @@ Each decision entry follows this structure:
 - **Rationale:** Why this choice was made
 - **Trade-offs:** Costs and benefits of the decision
 - **Evidence:** Supporting data or references (where applicable)
-- **Status:** Implemented | Planned | Deferred
 
 ---
 
@@ -29,7 +26,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** Less framework breadth vs cleaner codebase.
 
-**Status:** Implemented
 
 ---
 
@@ -41,7 +37,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** Heavier dependency than sklearn, but demonstrates transformer competency.
 
-**Status:** Implemented
 
 ---
 
@@ -53,7 +48,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** Not production-scale, but appropriate for assessment scope.
 
-**Status:** Implemented
 
 ---
 
@@ -65,7 +59,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** No remote collaboration features, acceptable for single-developer demo.
 
-**Status:** Implemented
 
 ---
 
@@ -77,7 +70,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** Less production-realistic, but cleaner for demo purposes.
 
-**Status:** Implemented
 
 ---
 
@@ -103,7 +95,6 @@ Each decision entry follows this structure:
 - Clean labels (0% vs 30% conflicts)
 - Expected model performance: >85% F1 vs 18% on noisy data
 
-**Status:** Implemented
 
 ---
 
@@ -126,7 +117,6 @@ Each decision entry follows this structure:
 
 **Evidence:** See `ARCHITECTURE.md` for detailed data flow and component design.
 
-**Status:** Implemented
 
 ---
 
@@ -152,7 +142,6 @@ Each decision entry follows this structure:
 
 **Evidence:** Original DOODLE achieved 88% F1 with TF-IDF features on clean data
 
-**Status:** Implemented
 
 ---
 
@@ -172,7 +161,6 @@ Each decision entry follows this structure:
 - If priority/sentiment become real, callers create pipelines separately
 - But: Cleaner code now, easier to understand and maintain
 
-**Status:** Implemented
 
 ---
 
@@ -186,7 +174,6 @@ Each decision entry follows this structure:
 
 **Trade-off:** Standard metrics; no custom business-weighted scoring. Simpler approach appropriate for assessment scope.
 
-**Status:** Implemented
 
 ---
 
@@ -198,7 +185,6 @@ Each decision entry follows this structure:
 
 **Trade-off:** Less organization than production MLOps, appropriate for demo. In production, would use nested experiments (model type → hyperparameter search → final model).
 
-**Status:** Implemented
 
 ---
 
@@ -212,7 +198,6 @@ Each decision entry follows this structure:
 
 **Trade-offs:** Lower chance of finding a globally optimal configuration vs substantially lower overfitting risk and faster iteration.
 
-**Status:** Implemented
 
 ### Stage 4: Deep Learning (BERT)
 
@@ -224,7 +209,6 @@ Each decision entry follows this structure:
 
 **Trade-off:** This conservative schedule may underfit harder variants, but is appropriate for the deterministic clean-data category task.
 
-**Status:** Implemented
 
 ---
 
@@ -236,7 +220,6 @@ Each decision entry follows this structure:
 
 **Trade-off:** Tabular features are not used in default Stage 4 training, but optional model support remains available to avoid redesign later.
 
-**Status:** Implemented
 
 ### Stage 5: Retrieval, Sentiment & Anomaly Detection
 
@@ -248,7 +231,6 @@ Each decision entry follows this structure:
 
 **Trade-off:** Requires index build artifacts (vector index + entity index + corpus snapshot) and introduces an embedding dependency for index generation.
 
-**Status:** Implemented
 
 ---
 
@@ -264,7 +246,6 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Trade-off:** This does not detect subtle semantic drift directly; it focuses on confidence and volume behavior.
 
-**Status:** Implemented
 
 ---
 
@@ -276,7 +257,6 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Trade-off:** No backend comparison for sentiment specifically, but lower maintenance surface and faster iteration.
 
-**Status:** Implemented
 
 ---
 
@@ -288,7 +268,6 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Trade-off:** Slightly confusing API (why return fields that aren't real?), but demonstrates extensible design and allows early client integration.
 
-**Status:** Implemented
 
 ---
 
@@ -300,7 +279,6 @@ The approach stays interpretable and lightweight for assessment scope.
 
 **Trade-off:** No ensemble reliability benefit (variance reduction, failure resilience). Single model may miss edge cases caught by others. Acceptable for demo scope.
 
-**Status:** Implemented
 
 ---
 
