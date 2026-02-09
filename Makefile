@@ -20,10 +20,10 @@ CLEAN_TRAINING_PARQUET_PATH ?= data/processed/clean_training_$(ENV).parquet
 DBT_MODEL_SOURCES := $(shell find dbt_project/models -type f 2>/dev/null)
 RAW_TICKET_JSON := $(firstword $(wildcard data/raw/tickets.json support_tickets.json))
 
-.PHONY: install install-system install-python install-poetry install-deps install-verify check-data setup test \
+.PHONY: install check-system install-system install-python install-poetry install-deps install-verify check-data setup test \
 	data-pipeline dbt-run dbt-test
 
-install: check-data install-system install-python install-poetry install-deps install-verify
+install: check-data check-system install-python install-poetry install-deps install-verify
 
 check-data:
 >@echo "Checking for required data files..."
@@ -37,16 +37,55 @@ check-data:
 fi
 >@echo "Found required data file: support_tickets.json"
 
+check-system:
+>@echo "Checking for required system packages..."
+>@missing_pkgs=""; \
+>for pkg in build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+>           libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
+>           libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1; do \
+>  if ! dpkg-query -W -f='$${Status}' "$$pkg" 2>/dev/null | grep -q "install ok installed"; then \
+>    missing_pkgs="$$missing_pkgs $$pkg"; \
+>  fi; \
+>done; \
+>if [ -n "$$missing_pkgs" ]; then \
+>  echo ""; \
+>  echo "ERROR: Missing required system packages:$$missing_pkgs"; \
+>  echo ""; \
+>  echo "To install missing packages, run:"; \
+>  echo "  make install-system"; \
+>  echo ""; \
+>  echo "Or manually install with:"; \
+>  echo "  sudo apt-get install -y$$missing_pkgs"; \
+>  exit 1; \
+>fi
+>@echo "✓ All required system packages are installed"
+>@echo ""
+>@echo "Checking for Docker..."
+>@if command -v docker >/dev/null 2>&1; then \
+>  echo "✓ Docker is installed: $$(docker --version 2>/dev/null || echo 'version unknown')"; \
+>else \
+>  echo "⚠ Docker not found (optional - only needed for deployment)"; \
+>  echo "  To install: make install-system"; \
+>fi
+
+# Explicit system package installation (not run by default)
+# Run this manually if check-system fails
 install-system:
+>@echo "Installing required system packages (requires sudo)..."
+>sudo apt-get update
 >sudo apt-get install -y \
 >  build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
 >  libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev \
 >  libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git make libgomp1 pipx
+>@echo ""
+>@echo "Installing Docker (optional)..."
 >if apt-cache show docker-ce >/dev/null 2>&1; then \
 >  sudo apt-get install -y docker-ce docker-ce-cli docker-compose-plugin || echo "Note: docker-ce not available"; \
 >else \
 >  sudo apt-get install -y docker.io docker-compose-v2 || echo "Note: docker.io not available"; \
 >fi
+>@echo ""
+>@echo "✓ System packages installed successfully"
 
 install-python:
 >PYENV_ROOT="$(PYENV_ROOT_DIR)"; \

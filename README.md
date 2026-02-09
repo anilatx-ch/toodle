@@ -33,12 +33,41 @@ All models train on **clean, deduplicated data** (~110 unique subject→category
 
 ## Quick Start
 
+### Prerequisites
+
+Ensure you have the required data file:
+- `support_tickets.json` (must be provided - see project requirements)
+
+### Installation
+
 ```bash
-# Install dependencies
+# 1. Install system packages (one-time setup, requires sudo)
+make install-system
+
+# 2. Install Python, Poetry, and dependencies (verifies system packages)
 make install
 
-# Run tests
+# 3. Run tests to verify installation
 make test
+```
+
+**Note:** If you already have system packages installed, `make install` will verify and proceed automatically. Only run `make install-system` if verification fails.
+
+### Troubleshooting
+
+**Error: Missing required system packages**
+```bash
+ERROR: Missing required system packages: libncursesw5-dev
+
+To install missing packages, run:
+  make install-system
+```
+
+**Solution:** Run `make install-system` to install the missing packages, then retry `make install`.
+
+**Verify system packages without installing:**
+```bash
+make check-system
 ```
 
 ## Documentation
