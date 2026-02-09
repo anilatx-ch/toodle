@@ -319,7 +319,7 @@ The constraint is **data**, not **models**. Even perfect models cannot predict r
 ```bash
 cd exploration/subcategory_independence
 
-# Option 1: Use DOODLE's prepared data (if available)
+# Option 1: Use prepared data (if available)
 python investigate_subcategory.py \
     --data /path/to/data_int_encoded.pkl \
     --output-dir artifacts
@@ -374,7 +374,6 @@ This approach is **statistically optimal** given the data structure and will max
 ## References
 
 - **Original investigations:**
-  - INDEP_OPUS: `/home/ai_agent/DOODLE/docs/INDEP_OPUS/REPORT_subcategory_independence.md`
-  - INDEP_CODEX: `/home/ai_agent/DOODLE/docs/INDEP_CODEX/REPORT_INDEP_SUBCAT.md`
+  - Independent validation reports available in project history
 - **Source code:** `investigate_subcategory.py` (consolidated approach)
 - **Data encoding:** `encode_data.py` (feature preparation utilities)

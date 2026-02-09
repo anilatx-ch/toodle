@@ -1,12 +1,12 @@
 # TOODLE - Intelligent Support Ticket Classifier
 
-**Status:** Under construction (porting from DOODLE)
+**Status:** Under construction
 
 A clean, production-ready implementation of an intelligent support ticket categorization system demonstrating Full-Stack AI Engineer capabilities.
 
 ## Project Goals
 
-TOODLE is a cleaned port of the DOODLE project, reducing ~10,200 lines to ~4,500 lines while maintaining all core functionality:
+TOODLE demonstrates end-to-end ML engineering with clean, maintainable code (~4,500 lines):
 
 - **Traditional ML**: CatBoost + XGBoost
 - **Deep Learning**: DistilBERT with KerasNLP

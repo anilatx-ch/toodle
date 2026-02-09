@@ -43,7 +43,7 @@ This section documents expected model performance based on data quality analysis
 | **Zero-shot LLM** (GPT-4, Claude) | 0.70-0.80 | 0.70-0.80 | Medium |
 
 **Evidence:**
-- DOODLE experiments: BERT achieved **1.0 F1** on clean 110-sample dataset
+- Prior validation: BERT achieved **1.0 F1** on clean 110-sample dataset
 - Traditional ML (CatBoost): **0.88 F1** on clean data
 - Clean data with deterministic mapping enables high model performance
 
@@ -385,13 +385,13 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 
 ### Approach 1: Train on Full 100K (Noisy Data)
 
-- **F1:** 18% (proven in DOODLE experiments)
+- **F1:** 18% (proven in Prior validation)
 - **Issue:** Label noise drowns signal
 - **Not viable:** Below random guessing for 5 classes (20%)
 
 ### Approach 2: Train on Clean 110 Templates
 
-- **F1:** >85% (proven in DOODLE experiments)
+- **F1:** >85% (proven in Prior validation)
 - **Advantage:** Deterministic mapping, zero conflicts
 - **Trade-off:** Smaller training set, but sufficient for 5-class problem
 - **Chosen approach** ✓
@@ -424,7 +424,7 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 | **Model Size** | <500MB | <100MB | <10MB |
 
 **Rationale for targets:**
-- **0.85 F1:** Proven achievable on clean data (DOODLE experiments)
+- **0.85 F1:** Proven achievable on clean data (Prior validation)
 - **5-10 point gap (val→test):** Expected from small dataset (overfitting risk)
 - **Per-class F1 > 0.75:** All categories should perform well (no weak classes)
 
@@ -497,7 +497,6 @@ print(f"Validation F1: {f1:.3f}")  # Expected: >0.85
 
 - **Data Quality Investigation:** `exploration/subcategory_independence/REPORT.md`
 - **Architecture Documentation:** `docs/ARCHITECTURE.md`
-- **DOODLE Experiments:** Reference implementation (see original project)
 - **Clean Training Data:** `data/processed/clean_training_dev.parquet`
 - **Pipeline Logs:** `logs/data_pipeline_*.log`
 

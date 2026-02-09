@@ -2,7 +2,7 @@
 
 ## Overview
 
-TOODLE is a cleaned and focused rewrite of the DOODLE intelligent support ticket system. This is a technical assessment demonstrating Full-Stack AI Engineer skills, porting a bloated ~10,200-line codebase down to a maintainable ~4,500-line system that preserves all key capabilities while eliminating redundancy and over-engineering.
+TOODLE is an intelligent support ticket system demonstrating Full-Stack AI Engineer skills. This is a technical assessment showcasing clean, maintainable code (~4,500 lines) that delivers production-ready ML capabilities while avoiding over-engineering.
 
 **Goal**: Demonstrate clean design, practical trade-offs, and production thinking within a constrained scope (approximately one working day of development).
 
@@ -40,12 +40,12 @@ TOODLE is a cleaned and focused rewrite of the DOODLE intelligent support ticket
 **API**: FastAPI serving with /predict, /search, /analyze-feedback endpoints
 **DevOps**: Docker + docker-compose, Makefile automation
 
-### Excluded (trimmed from DOODLE)
+### Out of Scope
 
-- LightGBM (3rd traditional ML backend - redundant)
-- Subcategory classification (5 duplicate feature configs - deferred)
-- Training on noisy 100K dataset (data quality bug, not feature)
-- Experimental scripts (deterministic_mappings.py, single_feature_power.py, etc.)
+- LightGBM (3rd traditional ML backend - not needed for comparison)
+- Subcategory classification (deferred - see investigation report)
+- Training on noisy 100K dataset (data quality issue - use clean deduplicated set)
+- Experimental analysis scripts
 - 3-tier environment config (simplified to SMOKE_TEST + ENV)
 
 ### Placeholder Features

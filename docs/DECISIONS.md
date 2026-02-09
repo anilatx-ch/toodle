@@ -92,8 +92,8 @@ Each decision entry follows this structure:
 **Rationale:** Training on clean data is the correct approach; noisy training was a data quality bug, not a feature. The subject field alone provides deterministic category mapping, proven through validation checks that found zero conflicting labels.
 
 **Evidence:**
-- DOODLE BERT on clean data: **1.0 F1**
-- DOODLE CatBoost on clean data: **0.88 F1** vs **0.18 F1** on noisy 100K
+- BERT prototype on clean data: **1.0 F1**
+- CatBoost baseline on clean data: **0.88 F1** vs **0.18 F1** on noisy 100K
 - Subject→category validation: **0 conflicts** out of ~110 unique subjects
 - See `exploration/subcategory_independence/REPORT.md` for full statistical analysis
 - See `MODEL.md` for performance comparison details

@@ -58,6 +58,34 @@ or maintainability?"**
 - Prefer returning values over mutating arguments.
 - Prefer composition over inheritance.
 
+## Documentation Philosophy
+
+**CRITICAL**: Code and documentation must describe the **current system as it exists**, not its implementation history.
+
+- **NO references to old filenames** — Don't say "logic from clean_subject_extractor.py" or "merged from deterministic_mappings.py"
+- **NO porting artifacts** — Don't explain "this was previously split into three files" or "consolidated from DOODLE"
+- **Document intent, not history** — Explain *what* the code does and *why* this approach was chosen
+- **Write for the assessment audience** — The final deliverable (per 0_OBJECTIVE.md) should read as a clean, purposeful implementation
+
+**Example of what NOT to do:**
+```python
+def extract_clean_subjects(df):
+    """Extract unique subjects. Logic merged from clean_subject_extractor.py."""
+    # This used to be in a separate module but we consolidated it
+```
+
+**Correct approach:**
+```python
+def extract_clean_subjects(df):
+    """Extract unique subject→category mappings with conflict detection.
+
+    Returns deduplicated templates (~110 samples) where each subject maps
+    deterministically to exactly one category. Raises ValueError if conflicts found.
+    """
+```
+
+The assessment evaluators don't need to know about DOODLE or the porting process. They should see clean, intentional design.
+
 ## Scope Boundaries
 - **Two traditional ML backends**: CatBoost + XGBoost (no LightGBM)
 - **One deep learning backend**: DistilBERT

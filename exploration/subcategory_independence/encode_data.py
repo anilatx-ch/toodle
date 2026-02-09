@@ -7,7 +7,7 @@ This module provides functions to prepare data for statistical testing by:
 4. Encoding categorical features as integers (required for chi-squared tests)
 
 These transformations were used to create data_int_encoded.pkl for the
-subcategory independence investigation in DOODLE. They are ported here
+subcategory independence investigation. Consolidated here
 for reproducibility and documentation purposes.
 """
 
