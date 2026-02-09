@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class TicketInput(BaseModel):
-    """Legacy ticket input schema (for backward compatibility in preprocessing)."""
+    """Ticket input schema with priority field (used in preprocessing utilities)."""
 
     ticket_id: str
     subject: str
